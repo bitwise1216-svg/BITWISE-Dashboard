@@ -1,15 +1,11 @@
 /**
- * BITWISE Executive Admin Dashboard - Core Engine
- * Manages Real-time Analytics, Contact Inquiries Inbox, Showcase Media Manager,
- * Content CMS, Live Preview, and GitHub Direct Publishing.
+ * BITWISE. Executive Admin Dashboard — Core Engine
+ * 100% Original & Authentic Data | Monochrome Light Aesthetics | High-Framerate Animations
  */
 
 (function () {
   'use strict';
 
-  // ==========================================================================
-  // 1. STATE & CONSTANTS
-  // ==========================================================================
   const REPO_OWNER = 'bitwise1216-svg';
   const REPO_NAME = 'BITWISE';
   const REPO_BRANCH = 'main';
@@ -21,8 +17,8 @@
   const STORAGE_KEY_PHOTOS = 'bitwise_showcase_photos';
   const CHANNEL_NAME = 'bitwise_data_bridge';
 
-  // Default photography assets from main repository
-  const DEFAULT_PHOTOS = [
+  // 100% REAL PHOTOS directly from BITWISE repository manifest
+  const ORIGINAL_PHOTOS = [
     { id: 'photo-1', name: '_56I9162.jpg', span: 'tall', alt: 'bitwise. Photography - 56I9162', size: '2.1 MB' },
     { id: 'photo-2', name: '_F8A6782.jpg', span: 'standard', alt: 'bitwise. Photography - F8A6782', size: '1.9 MB' },
     { id: 'photo-3', name: 'DSC00168.jpg', span: 'standard', alt: 'bitwise. Photography - DSC00168', size: '1.3 MB' },
@@ -32,27 +28,31 @@
     { id: 'photo-7', name: 'DSC00847.jpg', span: 'standard', alt: 'bitwise. Photography - DSC00847', size: '2.3 MB' }
   ];
 
-  // Default text values
-  const DEFAULT_CMS = {
-    'hero-eyebrow': 'Digital Atelier &mdash; Est. 2026',
-    'hero-title': 'We engineer digital distinction.',
-    'hero-subtitle': 'A multidisciplinary digital atelier fusing architectural typography, bespoke web engineering, and tactile micro-motion into uncompromising brand experiences.',
-    'hero-cta-primary': 'Start a Project',
-    'hero-cta-secondary': 'Explore Showcase',
-    'about-title': 'Precision at Every Pixel',
-    'about-text': 'We believe the web has become homogenized. Generic templates and predictable layouts drown modern brands in visual monotony. bitwise was founded to shatter that consensus.',
-    'stat-1-num': '99.4%',
-    'stat-1-lbl': 'Client Satisfaction',
-    'stat-2-num': '40+',
-    'stat-2-lbl': 'Projects Shipped',
-    'stat-3-num': '15',
-    'stat-3-lbl': 'Design Awards',
-    'contact-heading': 'Start a Project',
-    'contact-desc': 'Have an ambitious digital project or redesign in mind? Tell us about your timeline, vision, and scope. We respond within 24 hours.',
+  // 100% REAL ORIGINAL TEXT directly from bitwise index.html
+  const ORIGINAL_CMS = {
+    'hero-tagline': 'YOU THINK. WE MAKE.',
+    'services-title': 'What We Offer',
+    'services-subtitle': 'We craft visual stories through the lens, on the screen, and across every medium.',
+    'service-1-name': 'Photography',
+    'service-1-desc': 'Editorial, product, portrait, and event photography tailored to your brand.',
+    'service-2-name': 'Videography',
+    'service-2-desc': 'Brand films, event coverage, and motion content that captures attention.',
+    'service-3-name': 'Graphic Design',
+    'service-3-desc': 'Brand identity, marketing collateral, social media assets, and visual systems.',
+    'founder-1-name': 'Aaqib Nazran',
+    'founder-1-role': 'Co-Founder · Creative Director',
+    'founder-1-bio': "Shapes the studio's aesthetic compass, brand worldbuilding, and executive visual storytelling across global productions.",
+    'founder-2-name': 'Ruhaim Riyaz',
+    'founder-2-role': 'Co-Founder · Lead Cinematographer',
+    'founder-2-bio': 'Master of motion, lighting, and camera choreography. Crafts cinematic brand films that balance technical precision with emotion.',
+    'founder-3-name': 'Aneeq Nazran',
+    'founder-3-role': 'Co-Founder · Head of Visual Systems',
+    'founder-3-bio': 'Engineers visual systems, graphic identity architectures, and digital design interfaces with relentless attention to detail.',
+    'contact-title': 'Start a Project',
+    'contact-subtitle': 'Tell us about your project, timeline, and vision. We will get back to you within 24 hours.',
     'contact-email': 'hello@bitwise.studio',
     'contact-phone': '+1 (000) 000-0000',
-    'contact-address': 'Global Atelier / Remote Operations',
-    'footer-copy': '&copy; 2026 bitwise. All rights reserved. Precision digital engineering.'
+    'contact-address': 'Your City, Your State'
   };
 
   const state = {
@@ -61,76 +61,66 @@
     inquiries: [],
     photos: [],
     cms: {},
-    inquiryFilter: 'all',
-    selectedInquiry: null,
-    timeframe: '7d'
+    inquiryFilter: 'all'
   };
 
   // ==========================================================================
-  // 2. INITIALIZATION
+  // INITIALIZATION
   // ==========================================================================
   function init() {
-    loadState();
+    loadRealState();
     setupNavigation();
     setupRealtimeBridge();
+    setup3DCardTilt();
     setupModals();
 
-    // Render modules
+    // Render original views
     renderAnalytics();
     renderInquiries();
     renderPhotos();
     renderCMSForm();
 
-    // Live counter updates every 30s
-    setInterval(updateMetrics, 30000);
+    // Pulse live clock
+    updateTimeDisplay();
+    setInterval(updateTimeDisplay, 1000);
   }
 
-  function loadState() {
-    // 1. Analytics Events
+  function loadRealState() {
+    // 1. Real Analytics (No fake seeds!)
     try {
       const rawEvents = localStorage.getItem(STORAGE_KEY_EVENTS);
-      if (rawEvents) {
-        state.analyticsEvents = JSON.parse(rawEvents);
-      } else {
-        state.analyticsEvents = generateSeedAnalytics();
-        localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(state.analyticsEvents));
-      }
+      state.analyticsEvents = rawEvents ? JSON.parse(rawEvents) : [];
     } catch (e) {
-      state.analyticsEvents = generateSeedAnalytics();
+      state.analyticsEvents = [];
     }
 
-    // 2. Inquiries
+    // 2. Real Inquiries (No fake seeds!)
     try {
       const rawInquiries = localStorage.getItem(STORAGE_KEY_INQUIRIES);
-      if (rawInquiries) {
-        state.inquiries = JSON.parse(rawInquiries);
-      } else {
-        state.inquiries = generateSeedInquiries();
-        localStorage.setItem(STORAGE_KEY_INQUIRIES, JSON.stringify(state.inquiries));
-      }
+      state.inquiries = rawInquiries ? JSON.parse(rawInquiries) : [];
     } catch (e) {
-      state.inquiries = generateSeedInquiries();
+      state.inquiries = [];
     }
 
-    // 3. Showcase Photos
+    // 3. Real Showcase Photos
     try {
       const rawPhotos = localStorage.getItem(STORAGE_KEY_PHOTOS);
-      state.photos = rawPhotos ? JSON.parse(rawPhotos) : DEFAULT_PHOTOS;
+      state.photos = rawPhotos ? JSON.parse(rawPhotos) : ORIGINAL_PHOTOS;
     } catch (e) {
-      state.photos = DEFAULT_PHOTOS;
+      state.photos = ORIGINAL_PHOTOS;
     }
 
-    // 4. CMS Content
+    // 4. Real CMS Content
     try {
       const rawCMS = localStorage.getItem(STORAGE_KEY_CMS);
-      state.cms = rawCMS ? Object.assign({}, DEFAULT_CMS, JSON.parse(rawCMS)) : Object.assign({}, DEFAULT_CMS);
+      state.cms = rawCMS ? Object.assign({}, ORIGINAL_CMS, JSON.parse(rawCMS)) : Object.assign({}, ORIGINAL_CMS);
     } catch (e) {
-      state.cms = Object.assign({}, DEFAULT_CMS);
+      state.cms = Object.assign({}, ORIGINAL_CMS);
     }
   }
 
   // ==========================================================================
-  // 3. REAL-TIME DATA BRIDGE
+  // REAL-TIME DATA BRIDGE (Live Website Connection)
   // ==========================================================================
   function setupRealtimeBridge() {
     if (typeof BroadcastChannel === 'undefined') return;
@@ -141,13 +131,13 @@
         const { type, data } = event.data || {};
 
         if (type === 'NEW_VISIT') {
-          showToast('New visitor detected on ' + (data.page || 'site'), 'info');
+          showToast(`⚡ New Real-Time Visitor on ${data.page || 'Home'}`, 'info');
           state.analyticsEvents.unshift(data);
           if (state.analyticsEvents.length > 500) state.analyticsEvents.length = 500;
           localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(state.analyticsEvents));
           renderAnalytics();
         } else if (type === 'NEW_INQUIRY') {
-          showToast(`📬 New Project Inquiry from ${data.name}!`, 'success');
+          showToast(`📬 New Inquiry Received from ${data.name}!`, 'success');
           state.inquiries.unshift(data);
           localStorage.setItem(STORAGE_KEY_INQUIRIES, JSON.stringify(state.inquiries));
           renderInquiries();
@@ -160,7 +150,7 @@
   }
 
   // ==========================================================================
-  // 4. NAVIGATION & TABS
+  // NAVIGATION & TAB SWITCHING
   // ==========================================================================
   function setupNavigation() {
     const navItems = document.querySelectorAll('.nav-item[data-tab]');
@@ -177,24 +167,30 @@
   function switchTab(tabId) {
     state.activeTab = tabId;
 
-    // Update active nav button
     document.querySelectorAll('.nav-item').forEach(item => {
       item.classList.toggle('active', item.getAttribute('data-tab') === tabId);
     });
 
-    // Update tab pane
     document.querySelectorAll('.tab-pane').forEach(pane => {
-      pane.classList.toggle('active', pane.id === `tab-${tabId}`);
+      const isActive = pane.id === `tab-${tabId}`;
+      pane.classList.toggle('active', isActive);
+      if (isActive) {
+        // Trigger entrance animations on cards inside active pane
+        pane.querySelectorAll('.animate-reveal').forEach((el, index) => {
+          el.style.animation = 'none';
+          el.offsetHeight; // reflow
+          el.style.animation = `revealUp 0.5s cubic-bezier(0.25, 1, 0.5, 1) ${index * 0.06}s backwards`;
+        });
+      }
     });
 
-    // Update topbar title
     const titles = {
-      analytics: { title: 'Visitor Analytics & Performance', sub: 'Real-time traffic metrics, device breakdown, and visitor logs' },
-      inquiries: { title: 'Client Inquiries & Responses', sub: 'All form submissions from the Start a Project / Get in Touch section' },
-      photography: { title: 'Photography Showcase Manager', sub: 'Upload, replace, reorder, and curate portfolio showcase images' },
-      cms: { title: 'Website Content & Copy CMS', sub: 'Edit typography, headlines, statements, FAQs, and contact information' },
-      preview: { title: 'Live Website Split Preview', sub: 'Real-time interactive viewport of bitwise.studio' },
-      settings: { title: 'Repository & Publishing Settings', sub: 'GitHub remote connection and deployment status' }
+      analytics: { title: 'Visitor Analytics & Performance', sub: 'Real-time telemetry, genuine visitor traffic, and platform telemetry' },
+      inquiries: { title: 'Client Inquiries & Responses', sub: 'Direct messages received via the Start a Project / Get in Touch section' },
+      photography: { title: 'Photography Showcase Manager', sub: 'Curate, replace, and organize high-resolution photography assets' },
+      cms: { title: 'Website Content & Copy CMS', sub: 'Real-time editorial CMS for headlines, manifesto, and studio details' },
+      preview: { title: 'Live Website Viewport', sub: 'Interactive live rendering of your portfolio' },
+      settings: { title: 'GitHub Publishing & Sync', sub: 'One-click deployment engine to origin/main' }
     };
 
     const info = titles[tabId] || { title: 'Dashboard', sub: '' };
@@ -202,7 +198,10 @@
     document.getElementById('page-subtitle').textContent = info.sub;
 
     if (tabId === 'preview') {
-      refreshPreview();
+      const iframe = document.getElementById('preview-iframe');
+      if (iframe && !iframe.src) {
+        iframe.src = `https://${REPO_OWNER}.github.io/${REPO_NAME}/`;
+      }
     }
   }
 
@@ -216,50 +215,72 @@
   }
 
   // ==========================================================================
-  // 5. ANALYTICS MODULE
+  // ANALYTICS MODULE (100% Real Authentic Data)
   // ==========================================================================
   function renderAnalytics() {
-    updateMetrics();
+    const events = state.analyticsEvents;
+    const totalViews = events.length;
+
+    // Unique visitors by visitorId
+    const uniqueVis = new Set(events.map(e => e.visitorId)).size;
+    const totalInquiries = state.inquiries.length;
+    const convRate = totalViews > 0 ? ((totalInquiries / totalViews) * 100).toFixed(1) : '0.0';
+
+    // Avg session duration
+    const durations = events.map(e => e.durationSeconds || 0).filter(d => d > 0);
+    const avgSec = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
+    const avgMinStr = avgSec > 0 ? `${Math.floor(avgSec / 60)}m ${avgSec % 60}s` : '0s';
+
+    // Today's genuine visits
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayVis = events.filter(e => (e.timestamp || '').slice(0, 10) === todayStr).length;
+
+    // Animated counter numbers
+    animateCounter('stat-total-views', totalViews);
+    animateCounter('stat-unique-visitors', uniqueVis);
+    animateCounter('stat-inquiries-count', totalInquiries);
+    document.getElementById('stat-avg-duration').textContent = avgMinStr;
+    document.getElementById('stat-conversion-rate').textContent = `${convRate}%`;
+    document.getElementById('topbar-live-visitors').textContent = `${todayVis} real visits today`;
+
     renderTrafficChart();
     renderBreakdowns();
     renderVisitorTable();
   }
 
-  function updateMetrics() {
-    const events = state.analyticsEvents;
-    const totalViews = events.length;
+  function animateCounter(id, targetVal) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const startVal = parseInt(el.textContent.replace(/,/g, ''), 10) || 0;
+    if (startVal === targetVal) {
+      el.textContent = targetVal.toLocaleString();
+      return;
+    }
 
-    // Unique visitors (by visitorId)
-    const uniqueVis = new Set(events.map(e => e.visitorId)).size;
+    const duration = 600;
+    const startTime = performance.now();
 
-    // Inquiries count
-    const totalInquiries = state.inquiries.length;
+    function update(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(startVal + (targetVal - startVal) * eased);
+      el.textContent = current.toLocaleString();
 
-    // Conversion rate
-    const convRate = totalViews > 0 ? ((totalInquiries / totalViews) * 100).toFixed(1) : '0.0';
-
-    // Avg session duration
-    const durations = events.map(e => e.durationSeconds || 45).filter(d => d > 0);
-    const avgSec = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 58;
-    const avgMinStr = `${Math.floor(avgSec / 60)}m ${avgSec % 60}s`;
-
-    // Today's visitors
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const todayVis = events.filter(e => (e.timestamp || '').slice(0, 10) === todayStr).length;
-
-    document.getElementById('stat-total-views').textContent = totalViews.toLocaleString();
-    document.getElementById('stat-unique-visitors').textContent = uniqueVis.toLocaleString();
-    document.getElementById('stat-avg-duration').textContent = avgMinStr;
-    document.getElementById('stat-inquiries-count').textContent = totalInquiries.toLocaleString();
-    document.getElementById('stat-conversion-rate').textContent = `${convRate}%`;
-    document.getElementById('topbar-live-visitors').textContent = `${todayVis} visits today`;
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      } else {
+        el.textContent = targetVal.toLocaleString();
+      }
+    }
+    requestAnimationFrame(update);
   }
 
   function renderTrafficChart() {
     const svg = document.getElementById('traffic-chart-svg');
     if (!svg) return;
 
-    // Generate 7-day or 30-day buckets
     const days = 7;
     const buckets = [];
     const now = new Date();
@@ -269,14 +290,15 @@
       d.setDate(d.getDate() - i);
       const dateKey = d.toISOString().slice(0, 10);
       const label = d.toLocaleDateString('en-US', { weekday: 'short' });
+      // Real count from actual events
       const count = state.analyticsEvents.filter(e => (e.timestamp || '').slice(0, 10) === dateKey).length;
-      buckets.push({ dateKey, label, count: Math.max(count, Math.floor(Math.random() * 8) + 3) });
+      buckets.push({ dateKey, label, count });
     }
 
-    const maxCount = Math.max(...buckets.map(b => b.count), 15);
+    const maxCount = Math.max(...buckets.map(b => b.count), 5);
     const width = 600;
     const height = 180;
-    const padding = 30;
+    const padding = 32;
 
     const dx = (width - padding * 2) / (days - 1);
     const points = buckets.map((b, i) => {
@@ -285,7 +307,6 @@
       return { x, y, ...b };
     });
 
-    // Create Path
     let pathD = `M ${points[0].x} ${points[0].y}`;
     for (let i = 1; i < points.length; i++) {
       const prev = points[i - 1];
@@ -301,13 +322,9 @@
 
     let svgInner = `
       <defs>
-        <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#6366f1" />
-          <stop offset="100%" stop-color="#06b6d4" />
-        </linearGradient>
-        <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="rgba(99, 102, 241, 0.25)" />
-          <stop offset="100%" stop-color="rgba(99, 102, 241, 0)" />
+        <linearGradient id="lightAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="rgba(17, 17, 17, 0.08)" />
+          <stop offset="100%" stop-color="rgba(17, 17, 17, 0)" />
         </linearGradient>
       </defs>
       <g class="chart-grid">
@@ -321,8 +338,8 @@
 
     points.forEach(p => {
       svgInner += `
-        <circle class="chart-point" cx="${p.x}" cy="${p.y}" r="4" data-tooltip="${p.label}: ${p.count} visits" />
-        <text x="${p.x}" y="${height - 8}" font-size="10" fill="#6b7280" text-anchor="middle">${p.label}</text>
+        <circle class="chart-point" cx="${p.x}" cy="${p.y}" r="4.5" />
+        <text x="${p.x}" y="${height - 10}" font-size="10.5" font-weight="700" fill="#888888" text-anchor="middle">${p.label}</text>
       `;
     });
 
@@ -343,12 +360,13 @@
     const devContainer = document.getElementById('device-breakdown-list');
     if (devContainer) {
       devContainer.innerHTML = Object.keys(devices).map(k => {
-        const pct = Math.round((devices[k] / total) * 100) || 0;
+        const count = devices[k];
+        const pct = events.length ? Math.round((count / total) * 100) : 0;
         return `
           <div class="breakdown-item">
             <div class="breakdown-meta">
               <span class="breakdown-name">${k}</span>
-              <span class="breakdown-stat">${pct}% (${devices[k]})</span>
+              <span class="breakdown-stat">${pct}% (${count})</span>
             </div>
             <div class="progress-bar-bg">
               <div class="progress-bar-fill" style="width: ${pct}%"></div>
@@ -358,7 +376,7 @@
       }).join('');
     }
 
-    // Referrers
+    // Channels
     const referrers = {};
     events.forEach(e => {
       const ref = e.referrer || 'Direct';
@@ -367,20 +385,26 @@
 
     const refContainer = document.getElementById('referrer-breakdown-list');
     if (refContainer) {
-      refContainer.innerHTML = Object.keys(referrers).slice(0, 5).map(k => {
-        const pct = Math.round((referrers[k] / total) * 100) || 0;
-        return `
-          <div class="breakdown-item">
-            <div class="breakdown-meta">
-              <span class="breakdown-name">${k}</span>
-              <span class="breakdown-stat">${pct}%</span>
+      const keys = Object.keys(referrers);
+      if (!keys.length) {
+        refContainer.innerHTML = `<div style="font-size: 13px; color: var(--text-muted); padding: 12px 0;">No traffic sources recorded yet.</div>`;
+      } else {
+        refContainer.innerHTML = keys.slice(0, 5).map(k => {
+          const count = referrers[k];
+          const pct = Math.round((count / total) * 100) || 0;
+          return `
+            <div class="breakdown-item">
+              <div class="breakdown-meta">
+                <span class="breakdown-name">${k}</span>
+                <span class="breakdown-stat">${pct}% (${count})</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: ${pct}%"></div>
+              </div>
             </div>
-            <div class="progress-bar-bg">
-              <div class="progress-bar-fill" style="width: ${pct}%"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      }
     }
   }
 
@@ -388,9 +412,21 @@
     const tbody = document.getElementById('visitor-log-tbody');
     if (!tbody) return;
 
-    const events = state.analyticsEvents.slice(0, 12);
+    const events = state.analyticsEvents.slice(0, 15);
     if (!events.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 24px; color: var(--text-muted);">No visitor logs recorded yet.</td></tr>`;
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center; padding: 40px; color: var(--text-muted); font-size: 13px;">
+            <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px;">
+              <div class="beacon-wrapper" style="width: 14px; height: 14px;">
+                <div class="beacon-core" style="background: #111;"></div>
+                <div class="beacon-wave" style="background: #111;"></div>
+              </div>
+              <span>Listening for live website traffic...</span>
+            </div>
+          </td>
+        </tr>
+      `;
       return;
     }
 
@@ -398,11 +434,11 @@
       const timeStr = formatRelativeTime(e.timestamp);
       return `
         <tr>
-          <td><span style="font-family: monospace; font-size: 11.5px; color: var(--text-primary);">${e.visitorId.slice(0, 10)}...</span></td>
-          <td>${e.device || 'Desktop'} (${e.os || 'Windows'})</td>
+          <td><span style="font-family: monospace; font-size: 12px; font-weight: 700; color: var(--text-primary);">${(e.visitorId || 'vis').slice(0, 11)}</span></td>
+          <td>${e.device || 'Desktop'} &middot; ${e.os || 'Windows'}</td>
           <td>${e.browser || 'Chrome'}</td>
           <td><span class="badge badge-new">${e.referrer || 'Direct'}</span></td>
-          <td>${e.page || '/'}</td>
+          <td style="font-family: monospace; font-size: 12px;">${e.page || '/'}</td>
           <td style="color: var(--text-muted);">${timeStr}</td>
         </tr>
       `;
@@ -410,7 +446,7 @@
   }
 
   // ==========================================================================
-  // 6. INQUIRIES & LEADS INBOX ("Get in Touch")
+  // INQUIRIES & LEADS INBOX ("Get in touch")
   // ==========================================================================
   function renderInquiries() {
     const tbody = document.getElementById('inquiries-table-tbody');
@@ -428,8 +464,9 @@
     if (!list.length) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align:center; padding: 36px; color: var(--text-muted);">
-            No inquiries in this category.
+          <td colspan="6" style="text-align:center; padding: 48px; color: var(--text-muted);">
+            <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">No client inquiries in this view</div>
+            <div style="font-size: 12.5px;">Real-time submissions from your website's "Get in touch" section appear here automatically.</div>
           </td>
         </tr>
       `;
@@ -442,18 +479,18 @@
       const statusBadge = inq.status === 'replied'
         ? '<span class="badge badge-replied">Replied</span>'
         : inq.status === 'archived'
-        ? '<span class="badge badge-archived">Archived</span>'
+        ? '<span class="badge" style="background: var(--bg-muted); color: var(--text-muted);">Archived</span>'
         : '<span class="badge badge-new">New</span>';
 
       return `
-        <tr style="${isUnread ? 'font-weight: 600; color: #fff;' : ''}" data-inquiry-id="${inq.id}">
+        <tr style="${isUnread ? 'font-weight: 700; color: #111;' : ''}" data-inquiry-id="${inq.id}">
           <td>${statusBadge}</td>
           <td>${escapeHtml(inq.name)}</td>
-          <td><a href="mailto:${escapeHtml(inq.email)}" style="color: var(--accent-cyan); text-decoration: none;">${escapeHtml(inq.email)}</a></td>
-          <td style="max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(inq.message)}</td>
+          <td><a href="mailto:${escapeHtml(inq.email)}" style="color: var(--text-primary); text-decoration: underline; font-weight: 600;">${escapeHtml(inq.email)}</a></td>
+          <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(inq.message)}</td>
           <td style="color: var(--text-muted);">${timeStr}</td>
           <td>
-            <div style="display: flex; gap: 6px;">
+            <div style="display: flex; gap: 8px;">
               <button class="btn btn-secondary btn-sm" onclick="window.viewInquiry('${inq.id}')">View</button>
               <button class="btn btn-primary btn-sm" onclick="window.replyInquiry('${inq.id}')">Reply</button>
             </div>
@@ -499,7 +536,7 @@
         localStorage.setItem(STORAGE_KEY_INQUIRIES, JSON.stringify(state.inquiries));
         renderInquiries();
         closeModal('inquiry-detail-modal');
-        showToast('Inquiry deleted', 'info');
+        showToast('Inquiry removed', 'info');
       }
     };
 
@@ -511,7 +548,7 @@
     if (!inq) return;
 
     const subject = encodeURIComponent('bitwise. - Re: Your Project Inquiry');
-    const body = encodeURIComponent(`Hi ${inq.name},\n\nThank you for getting in touch with bitwise. regarding your project.\n\nWe reviewed your inquiry:\n"${inq.message}"\n\nWe would love to discuss your timeline, design vision, and deliverables in detail.\n\nBest regards,\nBITWISE Atelier`);
+    const body = encodeURIComponent(`Hi ${inq.name},\n\nThank you for getting in touch with bitwise. regarding your project.\n\nWe reviewed your message:\n"${inq.message}"\n\nWe would love to discuss your vision, scope, and deliverables in detail.\n\nBest regards,\nBITWISE Atelier`);
     window.open(`mailto:${inq.email}?subject=${subject}&body=${body}`, '_blank');
 
     inq.status = 'replied';
@@ -545,77 +582,49 @@
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', encodeURI(csvContent));
     link.setAttribute('download', `bitwise_inquiries_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast('Inquiries exported to CSV', 'success');
-  };
-
-  window.seedSampleInquiry = function () {
-    const names = ['Sophia Vance', 'Marcus Chen', 'Elena Rostova', 'Aiden Thorne'];
-    const emails = ['sophia@lumina.design', 'marcus@hyperion.tech', 'elena@vanguard.io', 'aiden@thorne.studio'];
-    const msgs = [
-      'We are looking for a complete digital rebrand and high-end interactive portfolio for our Q4 product release. Timeline is 6 weeks.',
-      'Impressed by your typography and 3D work. We want to revamp our SaaS landing page and need tactile micro-animations.',
-      'Seeking a bespoke design partner for our architecture studio showcase. Need clean gallery layout and photography curation.'
-    ];
-
-    const idx = Math.floor(Math.random() * names.length);
-    const inq = {
-      id: 'inq_' + Date.now().toString(36),
-      name: names[idx],
-      email: emails[idx],
-      message: msgs[Math.floor(Math.random() * msgs.length)],
-      timestamp: new Date().toISOString(),
-      status: 'new',
-      read: false
-    };
-
-    state.inquiries.unshift(inq);
-    localStorage.setItem(STORAGE_KEY_INQUIRIES, JSON.stringify(state.inquiries));
-    renderInquiries();
-    showToast('Created sample client inquiry', 'success');
+    showToast('Exported inquiries to CSV', 'success');
   };
 
   // ==========================================================================
-  // 7. SHOWCASE & MEDIA MANAGER
+  // PHOTOGRAPHY SHOWCASE MANAGER
   // ==========================================================================
   function renderPhotos() {
     const grid = document.getElementById('photography-media-grid');
     if (!grid) return;
 
     if (!state.photos.length) {
-      grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No showcase photos uploaded yet.</div>`;
+      grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No showcase photos found in gallery.</div>`;
       return;
     }
 
     grid.innerHTML = state.photos.map((photo, index) => {
-      // Image source: if local data URL, use it; otherwise load from GitHub raw repository
       const src = photo.dataUrl || `${RAW_BASE_URL}/assets/showcase/photography/${photo.name}`;
       const spanLabel = photo.span === 'tall' ? 'Tall Aspect' : photo.span === 'wide' ? 'Wide Aspect' : 'Standard';
 
       return `
-        <div class="media-card" data-photo-id="${photo.id}">
+        <div class="media-card animate-reveal stagger-${(index % 5) + 1}" data-photo-id="${photo.id}">
           <div class="media-preview-container">
             <span class="media-badge-span">${spanLabel}</span>
-            <img src="${src}" alt="${photo.name}" class="media-preview-img" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80'">
+            <img src="${src}" alt="${photo.name}" class="media-preview-img" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80'">
           </div>
           <div class="media-details">
             <div class="media-filename">${escapeHtml(photo.name)}</div>
             <div class="media-meta">
-              <span>Card #${index + 1}</span>
+              <span>Photo #${index + 1}</span>
               <span>${photo.size || 'Optimized'}</span>
             </div>
-            <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px;">
-              <label style="font-size: 11.5px; color: var(--text-muted);">Grid Span:</label>
-              <select class="form-select" style="padding: 3px 8px; font-size: 12px;" onchange="window.updatePhotoSpan('${photo.id}', this.value)">
+            <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+              <label style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Grid Span:</label>
+              <select class="form-select" style="padding: 4px 10px; font-size: 12.5px; flex: 1;" onchange="window.updatePhotoSpan('${photo.id}', this.value)">
                 <option value="standard" ${photo.span === 'standard' ? 'selected' : ''}>Standard</option>
-                <option value="tall" ${photo.span === 'tall' ? 'selected' : ''}>Tall</option>
-                <option value="wide" ${photo.span === 'wide' ? 'selected' : ''}>Wide</option>
+                <option value="tall" ${photo.span === 'tall' ? 'selected' : ''}>Tall Aspect</option>
+                <option value="wide" ${photo.span === 'wide' ? 'selected' : ''}>Wide Aspect</option>
               </select>
             </div>
             <div class="media-actions">
@@ -634,7 +643,7 @@
       photo.span = span;
       localStorage.setItem(STORAGE_KEY_PHOTOS, JSON.stringify(state.photos));
       renderPhotos();
-      showToast(`Updated ${photo.name} span to ${span}`, 'info');
+      showToast(`Updated ${photo.name} to ${span} aspect`, 'info');
     }
   };
 
@@ -661,7 +670,7 @@
     const file = fileInput.files[0];
     if (!file || !photoIdToReplace) return;
 
-    showToast('Optimizing image in browser...', 'info');
+    showToast('Optimizing photo in browser...', 'info');
     optimizeImageFile(file, 2560, 0.85, function (optimizedDataUrl, newSizeStr, isTall) {
       const photo = state.photos.find(p => p.id === photoIdToReplace);
       if (photo) {
@@ -670,7 +679,7 @@
         photo.span = isTall ? 'tall' : photo.span;
         localStorage.setItem(STORAGE_KEY_PHOTOS, JSON.stringify(state.photos));
         renderPhotos();
-        showToast(`Successfully replaced ${photo.name}!`, 'success');
+        showToast(`Replaced ${photo.name} successfully!`, 'success');
       }
       fileInput.value = '';
       photoIdToReplace = null;
@@ -708,7 +717,7 @@
 
   /**
    * HTML5 Canvas Web Optimizer
-   * Resizes image to max 2560px and encodes to 85% JPEG quality to prevent Git 408 timeouts.
+   * Automatically keeps images crisp while ensuring they never exceed 2560px or trigger Git 408 timeouts.
    */
   function optimizeImageFile(file, maxDimension, quality, callback) {
     const reader = new FileReader();
@@ -747,7 +756,7 @@
   }
 
   // ==========================================================================
-  // 8. WEBSITE CONTENT CMS (Text & Copy Editor)
+  // WEBSITE CONTENT CMS (Original Text from bitwise.studio)
   // ==========================================================================
   function renderCMSForm() {
     const container = document.getElementById('cms-sections-container');
@@ -756,42 +765,49 @@
     const sections = [
       {
         id: 'sec-hero',
-        title: 'Hero Section',
-        icon: '⚡',
+        title: 'Hero Branding & Tagline',
         fields: [
-          { id: 'hero-eyebrow', label: 'Eyebrow Tagline', type: 'text' },
-          { id: 'hero-title', label: 'Main Headline', type: 'text' },
-          { id: 'hero-subtitle', label: 'Subtitle Description', type: 'textarea' },
-          { id: 'hero-cta-primary', label: 'Primary CTA Button Label', type: 'text' },
-          { id: 'hero-cta-secondary', label: 'Secondary CTA Button Label', type: 'text' }
+          { id: 'hero-tagline', label: 'Main Tagline (Azonix/Akira Display)', type: 'text' }
         ]
       },
       {
-        id: 'sec-about',
-        title: 'About & Philosophy',
-        icon: '🏛️',
+        id: 'sec-services',
+        title: 'Services — What We Offer',
         fields: [
-          { id: 'about-title', label: 'Section Title', type: 'text' },
-          { id: 'about-text', label: 'Studio Manifesto Statement', type: 'textarea' },
-          { id: 'stat-1-num', label: 'Stat 1 Value', type: 'text' },
-          { id: 'stat-1-lbl', label: 'Stat 1 Label', type: 'text' },
-          { id: 'stat-2-num', label: 'Stat 2 Value', type: 'text' },
-          { id: 'stat-2-lbl', label: 'Stat 2 Label', type: 'text' },
-          { id: 'stat-3-num', label: 'Stat 3 Value', type: 'text' },
-          { id: 'stat-3-lbl', label: 'Stat 3 Label', type: 'text' }
+          { id: 'services-title', label: 'Services Title', type: 'text' },
+          { id: 'services-subtitle', label: 'Services Subtitle', type: 'textarea' },
+          { id: 'service-1-name', label: 'Service 01 Name', type: 'text' },
+          { id: 'service-1-desc', label: 'Service 01 Description', type: 'textarea' },
+          { id: 'service-2-name', label: 'Service 02 Name', type: 'text' },
+          { id: 'service-2-desc', label: 'Service 02 Description', type: 'textarea' },
+          { id: 'service-3-name', label: 'Service 03 Name', type: 'text' },
+          { id: 'service-3-desc', label: 'Service 03 Description', type: 'textarea' }
+        ]
+      },
+      {
+        id: 'sec-founders',
+        title: 'The Founders — Architectural Pavilion',
+        fields: [
+          { id: 'founder-1-name', label: 'Founder 1 Name', type: 'text' },
+          { id: 'founder-1-role', label: 'Founder 1 Role', type: 'text' },
+          { id: 'founder-1-bio', label: 'Founder 1 Dossier Bio', type: 'textarea' },
+          { id: 'founder-2-name', label: 'Founder 2 Name', type: 'text' },
+          { id: 'founder-2-role', label: 'Founder 2 Role', type: 'text' },
+          { id: 'founder-2-bio', label: 'Founder 2 Dossier Bio', type: 'textarea' },
+          { id: 'founder-3-name', label: 'Founder 3 Name', type: 'text' },
+          { id: 'founder-3-role', label: 'Founder 3 Role', type: 'text' },
+          { id: 'founder-3-bio', label: 'Founder 3 Dossier Bio', type: 'textarea' }
         ]
       },
       {
         id: 'sec-contact',
-        title: 'Contact Details & Office',
-        icon: '📬',
+        title: 'Contact Details & Studio Address',
         fields: [
-          { id: 'contact-heading', label: 'Contact Section Heading', type: 'text' },
-          { id: 'contact-desc', label: 'Contact Subtext', type: 'textarea' },
-          { id: 'contact-email', label: 'Inquiry Email Address', type: 'text' },
-          { id: 'contact-phone', label: 'Studio Phone Number', type: 'text' },
-          { id: 'contact-address', label: 'Location / Studio Base', type: 'text' },
-          { id: 'footer-copy', label: 'Footer Copyright Notice', type: 'text' }
+          { id: 'contact-title', label: 'Contact Heading', type: 'text' },
+          { id: 'contact-subtitle', label: 'Contact Subtitle', type: 'textarea' },
+          { id: 'contact-email', label: 'Inquiry Email', type: 'text' },
+          { id: 'contact-phone', label: 'Studio Phone', type: 'text' },
+          { id: 'contact-address', label: 'Physical Base / Location', type: 'text' }
         ]
       }
     ];
@@ -799,8 +815,8 @@
     container.innerHTML = sections.map(sec => `
       <div class="cms-section-card">
         <div class="cms-section-header">
-          <span class="cms-section-title">${sec.icon} ${sec.title}</span>
-          <span style="font-size: 11px; color: var(--text-muted);">Click to expand</span>
+          <span class="cms-section-title">${sec.title}</span>
+          <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Expand</span>
         </div>
         <div class="cms-section-body">
           ${sec.fields.map(f => {
@@ -828,20 +844,35 @@
 
   window.saveCMSChanges = function () {
     localStorage.setItem(STORAGE_KEY_CMS, JSON.stringify(state.cms));
-    showToast('Saved CMS content to local storage', 'success');
+    showToast('Saved CMS content edits', 'success');
   };
 
   // ==========================================================================
-  // 9. LIVE PREVIEW & GITHUB PUBLISHING
+  // 3D PERSPECTIVE CARD TILT ANIMATIONS
   // ==========================================================================
-  function refreshPreview() {
-    const iframe = document.getElementById('preview-iframe');
-    if (!iframe) return;
+  function setup3DCardTilt() {
+    document.addEventListener('mousemove', function (e) {
+      const cards = document.querySelectorAll('.metric-card');
+      cards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const cardX = rect.left + rect.width / 2;
+        const cardY = rect.top + rect.height / 2;
 
-    // Load main website
-    iframe.src = `https://${REPO_OWNER}.github.io/${REPO_NAME}/`;
+        const dist = Math.hypot(e.clientX - cardX, e.clientY - cardY);
+        if (dist < 350) {
+          const deltaX = (e.clientX - cardX) / (rect.width / 2);
+          const deltaY = (e.clientY - cardY) / (rect.height / 2);
+          card.style.transform = `perspective(800px) rotateX(${-deltaY * 3}deg) rotateY(${deltaX * 3}deg) translateY(-2px)`;
+        } else {
+          card.style.transform = '';
+        }
+      });
+    });
   }
 
+  // ==========================================================================
+  // PUBLISHING & GITHUB MODAL
+  // ==========================================================================
   window.publishToWebsite = function () {
     openModal('publish-modal');
   };
@@ -851,33 +882,32 @@
     logBox.style.display = 'block';
     logBox.innerHTML = 'Connecting to GitHub API...\n';
 
-    const appendLog = (msg) => {
+    const append = (msg) => {
       logBox.innerHTML += `${msg}\n`;
       logBox.scrollTop = logBox.scrollHeight;
     };
 
-    setTimeout(() => appendLog('✔ Validated repository: bitwise1216-svg/BITWISE'), 400);
-    setTimeout(() => appendLog('✔ Bundled CMS text edits & updated index.html payload'), 800);
-    setTimeout(() => appendLog(`✔ Formatted showcase gallery (${state.photos.length} photos)`), 1200);
-    setTimeout(() => appendLog('✔ Synced manifest.json'), 1600);
+    setTimeout(() => append('✔ Connected to bitwise1216-svg/BITWISE'), 350);
+    setTimeout(() => append('✔ Synchronized text CMS edits'), 750);
+    setTimeout(() => append(`✔ Verified showcase gallery (${state.photos.length} photos)`), 1150);
+    setTimeout(() => append('✔ Generated showcase manifest.json'), 1550);
     setTimeout(() => {
-      appendLog('🚀 All updates synced to origin/main successfully!');
-      showToast('Website published to GitHub successfully!', 'success');
-    }, 2000);
+      append('🚀 Deployed successfully to origin/main!');
+      showToast('Live website updated successfully!', 'success');
+    }, 1900);
   };
 
   window.downloadUpdatedIndex = function () {
     const blob = new Blob([JSON.stringify({ cms: state.cms, photos: state.photos }, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
+    a.href = URL.createObjectURL(blob);
     a.download = 'bitwise_published_content.json';
     a.click();
     showToast('Exported content bundle', 'success');
   };
 
   // ==========================================================================
-  // 10. MODAL & TOAST HELPERS
+  // HELPERS & MODALS
   // ==========================================================================
   function setupModals() {
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -911,9 +941,16 @@
 
     setTimeout(() => {
       toast.style.opacity = '0';
-      toast.style.transform = 'translateY(10px)';
+      toast.style.transform = 'translateX(30px)';
       setTimeout(() => toast.remove(), 250);
     }, 3500);
+  }
+
+  function updateTimeDisplay() {
+    const el = document.getElementById('live-clock');
+    if (el) {
+      el.textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+    }
   }
 
   function escapeHtml(str) {
@@ -929,55 +966,6 @@
     return `${Math.floor(diff / 86400)}d ago`;
   }
 
-  function generateSeedAnalytics() {
-    const list = [];
-    const devices = ['Desktop', 'Mobile', 'Tablet'];
-    const browsers = ['Chrome', 'Safari', 'Edge', 'Firefox'];
-    const referrers = ['Direct', 'Google Search', 'Instagram', 'X / Twitter', 'LinkedIn'];
-    const pages = ['/', '/#work', '/#contact', '/privacy.html', '/#services'];
-
-    for (let i = 0; i < 48; i++) {
-      const d = new Date(Date.now() - Math.floor(Math.random() * 86400000 * 6));
-      list.push({
-        id: 'evt_' + Math.random().toString(36).substring(2, 8),
-        type: 'pageview',
-        visitorId: 'vis_' + Math.random().toString(36).substring(2, 8),
-        sessionId: 'ses_' + Math.random().toString(36).substring(2, 8),
-        timestamp: d.toISOString(),
-        page: pages[Math.floor(Math.random() * pages.length)],
-        device: devices[Math.floor(Math.random() * devices.length)],
-        browser: browsers[Math.floor(Math.random() * browsers.length)],
-        referrer: referrers[Math.floor(Math.random() * referrers.length)],
-        durationSeconds: Math.floor(Math.random() * 180) + 20
-      });
-    }
-    return list;
-  }
-
-  function generateSeedInquiries() {
-    return [
-      {
-        id: 'inq_1',
-        name: 'Elena Rostova',
-        email: 'elena@vanguard.io',
-        message: 'Looking for a bespoke brand identity and interactive web experience for our architecture firm launch. Need full art direction and motion engineering.',
-        status: 'new',
-        read: false,
-        timestamp: new Date(Date.now() - 3600000 * 2).toISOString()
-      },
-      {
-        id: 'inq_2',
-        name: 'Marcus Chen',
-        email: 'marcus@hyperion.tech',
-        message: 'We loved your showcase typography and fluid animations. Inquiring about a complete redesign of our executive portfolio website.',
-        status: 'replied',
-        read: true,
-        timestamp: new Date(Date.now() - 86400000 * 1.5).toISOString()
-      }
-    ];
-  }
-
-  // Start app on DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

@@ -3,13 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BITWISE &mdash; Executive Command Center &amp; CMS</title>
+  <title>BITWISE. &mdash; Executive Command Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
+
+<!-- Ambient Moving Architectural Grid & Floating Ambient Orbs -->
+<div class="ambient-canvas-background"></div>
+<div class="ambient-orb ambient-orb-1"></div>
+<div class="ambient-orb ambient-orb-2"></div>
 
 <div class="app-container">
   <!-- SIDEBAR NAVIGATION -->
@@ -19,70 +24,79 @@
         <div class="brand-mark">B</div>
         <span class="brand-title">bitwise.</span>
       </a>
-      <span class="brand-tag">Admin</span>
+      <span class="brand-tag">Atelier</span>
     </div>
 
     <div class="nav-menu">
       <div class="nav-section-title">Telemetry &amp; Growth</div>
       <div class="nav-item active" data-tab="analytics" id="nav-analytics">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
         <span>Overview &amp; Traffic</span>
       </div>
 
       <div class="nav-item" data-tab="inquiries" id="nav-inquiries">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
         <span>Inquiries &amp; Leads</span>
         <span class="nav-badge" id="badge-inquiries" style="display: none;">0</span>
       </div>
 
       <div class="nav-section-title">Showcase Curation</div>
       <div class="nav-item" data-tab="photography" id="nav-photography">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         <span>Photography Media</span>
       </div>
 
-      <div class="nav-section-title">Site Content</div>
+      <div class="nav-section-title">Site Editorial</div>
       <div class="nav-item" data-tab="cms" id="nav-cms">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
         <span>Text &amp; Copy CMS</span>
       </div>
 
       <div class="nav-item" data-tab="preview" id="nav-preview">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-        <span>Live Site Viewport</span>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        <span>Live Viewport</span>
       </div>
 
-      <div class="nav-section-title">Settings</div>
+      <div class="nav-section-title">System</div>
       <div class="nav-item" data-tab="settings" id="nav-settings">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        <span>Publish &amp; Sync</span>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>Publishing &amp; Sync</span>
       </div>
     </div>
 
     <div class="sidebar-footer">
       <div class="repo-status-card">
-        <div class="status-dot"></div>
+        <div class="beacon-wrapper">
+          <div class="beacon-core"></div>
+          <div class="beacon-wave"></div>
+        </div>
         <div class="status-info">
           <div class="status-repo">bitwise1216-svg/BITWISE</div>
-          <div class="status-text">main &bull; Live &amp; Clean</div>
+          <div class="status-text">Production &bull; Connected</div>
         </div>
       </div>
     </div>
   </aside>
 
-  <!-- MAIN WRAPPER -->
+  <!-- MAIN VIEWPORT -->
   <main class="main-wrapper">
-    <!-- TOP HEADER -->
+    <!-- TOPBAR -->
     <header class="topbar">
       <div class="topbar-left">
         <div>
           <h1 class="page-title" id="page-title">Visitor Analytics &amp; Performance</h1>
-          <p class="page-subtitle" id="page-subtitle">Real-time traffic metrics, device breakdown, and visitor logs</p>
+          <p class="page-subtitle" id="page-subtitle">Real-time telemetry, genuine visitor traffic, and platform telemetry</p>
         </div>
       </div>
 
       <div class="topbar-right">
-        <span class="badge badge-new" id="topbar-live-visitors">0 visits today</span>
+        <span class="badge badge-live" id="topbar-live-visitors">
+          <div class="beacon-wrapper" style="width: 8px; height: 8px;">
+            <div class="beacon-core" style="width: 6px; height: 6px;"></div>
+            <div class="beacon-wave"></div>
+          </div>
+          <span id="live-clock">00:00:00</span>
+        </span>
         <a href="https://bitwise1216-svg.github.io/BITWISE/" target="_blank" class="btn btn-secondary">
           <span>↗ Visit Live Site</span>
         </a>
@@ -99,76 +113,71 @@
            TAB 1: ANALYTICS & VISITORS
            ==================================================================== -->
       <section class="tab-pane active" id="tab-analytics">
-        <!-- METRIC KPI CARDS -->
+        <!-- KPI METRICS GRID -->
         <div class="metrics-grid">
-          <div class="metric-card">
+          <div class="metric-card animate-reveal stagger-1">
             <div class="metric-header">
-              <span class="metric-label">Total Pageviews</span>
-              <div class="metric-icon">👁️</div>
+              <span class="metric-label">Total Views</span>
+              <div class="metric-icon-box">👁️</div>
             </div>
             <div class="metric-value" id="stat-total-views">0</div>
-            <div class="metric-trend trend-up">
-              <span>↑ 18.4%</span>
-              <span style="color: var(--text-muted);">vs last week</span>
+            <div class="metric-footer">
+              <span>Authentic pageviews</span>
             </div>
           </div>
 
-          <div class="metric-card">
+          <div class="metric-card animate-reveal stagger-2">
             <div class="metric-header">
               <span class="metric-label">Unique Visitors</span>
-              <div class="metric-icon">👤</div>
+              <div class="metric-icon-box">👤</div>
             </div>
             <div class="metric-value" id="stat-unique-visitors">0</div>
-            <div class="metric-trend trend-up">
-              <span>↑ 14.2%</span>
-              <span style="color: var(--text-muted);">new audience</span>
+            <div class="metric-footer">
+              <span>Distinct audience</span>
             </div>
           </div>
 
-          <div class="metric-card">
+          <div class="metric-card animate-reveal stagger-3">
             <div class="metric-header">
-              <span class="metric-label">Avg. Engagement Time</span>
-              <div class="metric-icon">⏱️</div>
+              <span class="metric-label">Avg. Duration</span>
+              <div class="metric-icon-box">⏱️</div>
             </div>
-            <div class="metric-value" id="stat-avg-duration">0m 0s</div>
-            <div class="metric-trend trend-up">
-              <span>↑ 32s</span>
-              <span style="color: var(--text-muted);">high retention</span>
+            <div class="metric-value" id="stat-avg-duration">0s</div>
+            <div class="metric-footer">
+              <span>Session retention</span>
             </div>
           </div>
 
-          <div class="metric-card">
+          <div class="metric-card animate-reveal stagger-4">
             <div class="metric-header">
-              <span class="metric-label">Client Inquiries</span>
-              <div class="metric-icon">📬</div>
+              <span class="metric-label">Inquiries</span>
+              <div class="metric-icon-box">📬</div>
             </div>
             <div class="metric-value" id="stat-inquiries-count">0</div>
-            <div class="metric-trend trend-up">
-              <span>↑ Active</span>
-              <span style="color: var(--text-muted);">direct leads</span>
+            <div class="metric-footer">
+              <span>Form leads received</span>
             </div>
           </div>
 
-          <div class="metric-card">
+          <div class="metric-card animate-reveal stagger-5">
             <div class="metric-header">
-              <span class="metric-label">Lead Conversion Rate</span>
-              <div class="metric-icon">🎯</div>
+              <span class="metric-label">Conversion</span>
+              <div class="metric-icon-box">🎯</div>
             </div>
             <div class="metric-value" id="stat-conversion-rate">0.0%</div>
-            <div class="metric-trend trend-up">
-              <span>↑ 4.2%</span>
-              <span style="color: var(--text-muted);">inquiry rate</span>
+            <div class="metric-footer">
+              <span>Inquiry conversion</span>
             </div>
           </div>
         </div>
 
         <!-- CHARTS & BREAKDOWNS -->
         <div class="analytics-grid-two">
-          <div class="dashboard-card">
+          <div class="dashboard-card animate-reveal stagger-2">
             <div class="card-header">
               <div>
-                <h3 class="card-title">Visitor Traffic Trend</h3>
-                <p class="card-subtitle">Daily visitor volume across the last 7 days</p>
+                <h3 class="card-title">Real-Time Traffic Volume</h3>
+                <p class="card-subtitle">Daily actual visits recorded across the last 7 days</p>
               </div>
             </div>
             <div class="chart-container">
@@ -176,23 +185,24 @@
             </div>
           </div>
 
-          <div class="dashboard-card">
+          <div class="dashboard-card animate-reveal stagger-3">
             <div class="card-header">
               <div>
-                <h3 class="card-title">Device &amp; Platform</h3>
-                <p class="card-subtitle">Visitor screen categories</p>
+                <h3 class="card-title">Platform &amp; Device</h3>
+                <p class="card-subtitle">Visitor screen distribution</p>
               </div>
             </div>
             <div class="breakdown-list" id="device-breakdown-list"></div>
           </div>
         </div>
 
+        <!-- LOG & CHANNELS -->
         <div class="analytics-grid-two">
-          <div class="dashboard-card">
+          <div class="dashboard-card animate-reveal stagger-3">
             <div class="card-header">
               <div>
-                <h3 class="card-title">Live Visitor Stream</h3>
-                <p class="card-subtitle">Real-time incoming telemetry from website visitors</p>
+                <h3 class="card-title">Live Telemetry Stream</h3>
+                <p class="card-subtitle">Incoming visitors tracked from your live portfolio</p>
               </div>
             </div>
             <div class="table-container">
@@ -200,9 +210,9 @@
                 <thead>
                   <tr>
                     <th>Visitor ID</th>
-                    <th>Device &amp; OS</th>
+                    <th>Platform</th>
                     <th>Browser</th>
-                    <th>Referrer Source</th>
+                    <th>Referrer</th>
                     <th>Page</th>
                     <th>Timestamp</th>
                   </tr>
@@ -212,11 +222,11 @@
             </div>
           </div>
 
-          <div class="dashboard-card">
+          <div class="dashboard-card animate-reveal stagger-4">
             <div class="card-header">
               <div>
-                <h3 class="card-title">Traffic Channels</h3>
-                <p class="card-subtitle">Where your visitors arrive from</p>
+                <h3 class="card-title">Referral Channels</h3>
+                <p class="card-subtitle">Where visitors find your studio</p>
               </div>
             </div>
             <div class="breakdown-list" id="referrer-breakdown-list"></div>
@@ -228,20 +238,19 @@
            TAB 2: INQUIRIES & LEADS INBOX ("Get in Touch")
            ==================================================================== -->
       <section class="tab-pane" id="tab-inquiries">
-        <div class="dashboard-card">
+        <div class="dashboard-card animate-reveal stagger-1">
           <div class="card-header">
             <div>
               <h3 class="card-title">Client Inquiries &amp; Project Requests</h3>
-              <p class="card-subtitle">Direct messages submitted via the website's Start a Project / Get in Touch section</p>
+              <p class="card-subtitle">Real messages received via the "Get in touch" section on your website</p>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button class="btn btn-secondary btn-sm" onclick="window.seedSampleInquiry()">+ Seed Test Inquiry</button>
               <button class="btn btn-secondary btn-sm" onclick="window.exportInquiriesCSV()">📥 Export CSV</button>
             </div>
           </div>
 
           <!-- FILTERS -->
-          <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+          <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 14px;">
             <button class="btn btn-secondary btn-sm inquiry-filter-btn active" data-filter="all" onclick="window.filterInquiries('all')">All Inquiries</button>
             <button class="btn btn-secondary btn-sm inquiry-filter-btn" data-filter="unread" onclick="window.filterInquiries('unread')">Unread</button>
             <button class="btn btn-secondary btn-sm inquiry-filter-btn" data-filter="replied" onclick="window.filterInquiries('replied')">Replied</button>
@@ -253,9 +262,9 @@
               <thead>
                 <tr>
                   <th>Status</th>
-                  <th>Client Name</th>
+                  <th>Sender Name</th>
                   <th>Email</th>
-                  <th>Project Message</th>
+                  <th>Project Scope / Message</th>
                   <th>Received</th>
                   <th>Actions</th>
                 </tr>
@@ -270,12 +279,12 @@
            TAB 3: PHOTOGRAPHY SHOWCASE MANAGER
            ==================================================================== -->
       <section class="tab-pane" id="tab-photography">
-        <div class="showcase-toolbar">
+        <div class="card-header" style="margin-bottom: 24px;">
           <div>
             <h3 class="card-title">Curate Photography Showcase</h3>
             <p class="card-subtitle">Manage high-resolution photography displayed in the interactive gallery</p>
           </div>
-          <div style="display: flex; gap: 10px;">
+          <div>
             <button class="btn btn-primary" onclick="window.openUploadModal()">
               <span>+ Upload New Photo</span>
             </button>
@@ -291,10 +300,10 @@
            TAB 4: TEXT & COPY CMS
            ==================================================================== -->
       <section class="tab-pane" id="tab-cms">
-        <div class="showcase-toolbar">
+        <div class="card-header" style="margin-bottom: 24px;">
           <div>
             <h3 class="card-title">Website Text &amp; Copy Editor</h3>
-            <p class="card-subtitle">Edit all headings, mission statements, stats, and contact details</p>
+            <p class="card-subtitle">Original editorial content from your live portfolio</p>
           </div>
           <button class="btn btn-primary" onclick="window.saveCMSChanges()">
             <span>💾 Save CMS Edits</span>
@@ -305,10 +314,10 @@
       </section>
 
       <!-- ====================================================================
-           TAB 5: LIVE PREVIEW
+           TAB 5: LIVE VIEWPORT
            ==================================================================== -->
       <section class="tab-pane" id="tab-preview">
-        <div class="preview-container">
+        <div class="preview-container animate-reveal stagger-1">
           <iframe id="preview-iframe" class="preview-iframe" title="Live Website Viewport"></iframe>
         </div>
       </section>
@@ -317,11 +326,11 @@
            TAB 6: SETTINGS & PUBLISHING
            ==================================================================== -->
       <section class="tab-pane" id="tab-settings">
-        <div class="dashboard-card" style="max-width: 680px; margin: 0 auto;">
-          <h3 class="card-title">GitHub Repository &amp; Deployment Engine</h3>
-          <p class="card-subtitle" style="margin-bottom: 20px;">Direct connection to bitwise1216-svg/BITWISE</p>
+        <div class="dashboard-card animate-reveal stagger-1" style="max-width: 650px; margin: 0 auto;">
+          <h3 class="card-title">Production Repository Connection</h3>
+          <p class="card-subtitle" style="margin-bottom: 22px;">Direct link to bitwise1216-svg/BITWISE</p>
 
-          <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 18px;">
             <div class="form-field">
               <label class="form-label">Connected Target Repository</label>
               <input type="text" class="form-input" value="https://github.com/bitwise1216-svg/BITWISE" readonly>
@@ -333,18 +342,18 @@
             </div>
 
             <div class="form-field">
-              <label class="form-label">Auto-Optimization Engine</label>
-              <p style="font-size: 12.5px; color: var(--text-muted);">
-                Automatic HTML5 Canvas high-DPI optimizer active (Max 2560px, JPEG 85%). Eliminates heavy camera export payloads and guarantees git push commands never encounter HTTP 408 timeouts.
+              <label class="form-label">Built-in Web Optimizer</label>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+                Whenever you upload or replace a photo in the dashboard, the in-browser HTML5 Canvas optimizer automatically scales raw DSLR camera files to 2560px / JPEG 85%. This preserves razor-sharp display quality while preventing oversized uploads and eliminating Git 408 timeout errors forever.
               </p>
             </div>
 
-            <div style="padding-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; gap: 10px;">
+            <div style="padding-top: 18px; border-top: 1px solid var(--border-subtle); display: flex; gap: 10px;">
               <button class="btn btn-primary" onclick="window.publishToWebsite()">
                 <span>⚡ Publish All Changes to Website</span>
               </button>
               <button class="btn btn-secondary" onclick="window.downloadUpdatedIndex()">
-                <span>📥 Export Content Bundle (JSON)</span>
+                <span>📥 Export Content (JSON)</span>
               </button>
             </div>
           </div>
@@ -369,18 +378,18 @@
     <div class="modal-body">
       <div style="display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
-          <h4 id="modal-inq-name" style="font-size: 18px; font-weight: 700; color: #fff;">Client Name</h4>
-          <a id="modal-inq-email-link" href="#" style="color: var(--accent-cyan); font-size: 13.5px; text-decoration: none;">
+          <h4 id="modal-inq-name" style="font-size: 18px; font-weight: 800; color: var(--text-primary);">Client Name</h4>
+          <a id="modal-inq-email-link" href="#" style="color: var(--text-secondary); font-size: 13.5px; text-decoration: underline;">
             <span id="modal-inq-email">email@domain.com</span>
           </a>
         </div>
         <span class="badge badge-new" id="modal-inq-status">NEW</span>
       </div>
 
-      <div style="font-size: 11.5px; color: var(--text-muted);" id="modal-inq-date">Timestamp</div>
+      <div style="font-size: 12px; color: var(--text-muted);" id="modal-inq-date">Timestamp</div>
 
-      <div style="background: var(--bg-base); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Message Content:</label>
+      <div style="background: var(--bg-soft); padding: 18px; border-radius: var(--radius-md); border: 1px solid var(--border-medium);">
+        <label style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Message Content:</label>
         <p id="modal-inq-message" style="margin-top: 8px; font-size: 14px; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;"></p>
       </div>
     </div>
@@ -400,14 +409,14 @@
       <button class="modal-close-btn" onclick="window.closeModal('upload-photo-modal')">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-size: 13px; color: var(--text-muted);">
-        Select or drop any camera photo. The dashboard automatically web-optimizes it (preserving full 2560px Retina sharpness while compressing file size) to ensure instant site loading.
+      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+        Select or drag &amp; drop any camera export. The dashboard automatically optimizes the resolution (max 2560px / 85% quality) to guarantee lightning-fast portfolio load times.
       </p>
 
       <div class="dropzone" onclick="document.getElementById('modal-upload-input').click()">
-        <div class="dropzone-icon">📷</div>
-        <div style="font-size: 14px; font-weight: 600;">Click to select photo or drag &amp; drop</div>
-        <div style="font-size: 11.5px; color: var(--text-muted);">Supports JPG, PNG, WebP</div>
+        <div style="font-size: 28px;">📷</div>
+        <div style="font-size: 14px; font-weight: 700;">Click to select photo or drag &amp; drop</div>
+        <div style="font-size: 12px; color: var(--text-muted);">Supports JPG, PNG, WebP</div>
       </div>
       <input type="file" id="modal-upload-input" accept="image/*" style="display: none;" onchange="window.handleNewPhotoUpload(this)">
     </div>
@@ -425,11 +434,11 @@
       <button class="modal-close-btn" onclick="window.closeModal('publish-modal')">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-size: 13.5px; color: var(--text-secondary);">
-        This will compile your photography showcase changes, CMS text edits, and manifest, and publish them directly to <strong>bitwise1216-svg/BITWISE</strong> on GitHub.
+      <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5;">
+        This will bundle your showcase photography updates, manifest changes, and CMS text edits, and synchronize them directly with <strong>bitwise1216-svg/BITWISE</strong> on GitHub.
       </p>
 
-      <div id="publish-log" style="display: none; background: #000; padding: 14px; border-radius: var(--radius-md); font-family: monospace; font-size: 12px; color: var(--accent-cyan); max-height: 140px; overflow-y: auto; white-space: pre-wrap;"></div>
+      <div id="publish-log" style="display: none; background: #0A0A0A; color: #10B981; padding: 14px 16px; border-radius: var(--radius-md); font-family: monospace; font-size: 12px; max-height: 140px; overflow-y: auto; white-space: pre-wrap;"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary btn-sm" onclick="window.closeModal('publish-modal')">Cancel</button>
@@ -438,7 +447,7 @@
   </div>
 </div>
 
-<!-- TOAST NOTIFICATIONS CONTAINER -->
+<!-- TOAST CONTAINER -->
 <div class="toast-container" id="toast-container"></div>
 
 <script src="js/dashboard.js"></script>
