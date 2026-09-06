@@ -11,10 +11,11 @@
 </head>
 <body>
 
-<!-- Ambient Moving Architectural Grid & Floating Ambient Orbs -->
-<div class="ambient-canvas-background"></div>
-<div class="ambient-orb ambient-orb-1"></div>
-<div class="ambient-orb ambient-orb-2"></div>
+<!-- Ambient Moving Architectural Grid, Floating Ambient Orbs & Particle Canvas -->
+<canvas id="ambient-canvas"></canvas>
+<div class="ambient-grid"></div>
+<div class="ambient-glow-sphere sphere-top"></div>
+<div class="ambient-glow-sphere sphere-bottom"></div>
 
 <div class="app-container">
   <!-- SIDEBAR NAVIGATION -->
@@ -85,7 +86,7 @@
       <div class="topbar-left">
         <div>
           <h1 class="page-title" id="page-title">Visitor Analytics &amp; Performance</h1>
-          <p class="page-subtitle" id="page-subtitle">Real-time telemetry, genuine visitor traffic, and platform telemetry</p>
+          <p class="page-subtitle" id="page-subtitle">Real-time telemetry, genuine visitor traffic, and platform distribution</p>
         </div>
       </div>
 
@@ -378,9 +379,9 @@
     <div class="modal-body">
       <div style="display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
-          <h4 id="modal-inq-name" style="font-size: 18px; font-weight: 800; color: var(--text-primary);">Client Name</h4>
+          <h4 id="modal-inq-name" style="font-size: 18px; font-weight: 800; color: var(--text-primary);">&mdash;</h4>
           <a id="modal-inq-email-link" href="#" style="color: var(--text-secondary); font-size: 13.5px; text-decoration: underline;">
-            <span id="modal-inq-email">email@domain.com</span>
+            <span id="modal-inq-email">&mdash;</span>
           </a>
         </div>
         <span class="badge badge-new" id="modal-inq-status">NEW</span>

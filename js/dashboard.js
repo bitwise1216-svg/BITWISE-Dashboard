@@ -50,9 +50,9 @@
     'founder-3-bio': 'Engineers visual systems, graphic identity architectures, and digital design interfaces with relentless attention to detail.',
     'contact-title': 'Start a Project',
     'contact-subtitle': 'Tell us about your project, timeline, and vision. We will get back to you within 24 hours.',
-    'contact-email': 'hello@bitwise.studio',
+    'contact-email': 'bitwise1216@gmail.com',
     'contact-phone': '+1 (000) 000-0000',
-    'contact-address': 'Your City, Your State'
+    'contact-address': 'Global Atelier'
   };
 
   const state = {
@@ -65,44 +65,65 @@
   };
 
   // ==========================================================================
-  // INITIALIZATION
+  // INITIALIZATION & PURGE OF ANY FAKE DATA
   // ==========================================================================
   function init() {
-    loadRealState();
+    loadAndCleanState();
     setupNavigation();
     setupRealtimeBridge();
     setup3DCardTilt();
+    setupInteractiveBackground();
     setupModals();
 
-    // Render original views
+    // Render 100% original views
     renderAnalytics();
     renderInquiries();
     renderPhotos();
     renderCMSForm();
 
-    // Pulse live clock
+    // Clock
     updateTimeDisplay();
     setInterval(updateTimeDisplay, 1000);
   }
 
-  function loadRealState() {
-    // 1. Real Analytics (No fake seeds!)
-    try {
-      const rawEvents = localStorage.getItem(STORAGE_KEY_EVENTS);
-      state.analyticsEvents = rawEvents ? JSON.parse(rawEvents) : [];
-    } catch (e) {
-      state.analyticsEvents = [];
-    }
-
-    // 2. Real Inquiries (No fake seeds!)
+  function loadAndCleanState() {
+    // 1. Inquiries — PURGE any fake mock names, test seeds, or canned phrases
     try {
       const rawInquiries = localStorage.getItem(STORAGE_KEY_INQUIRIES);
-      state.inquiries = rawInquiries ? JSON.parse(rawInquiries) : [];
+      if (rawInquiries) {
+        const list = JSON.parse(rawInquiries);
+        // Exclude any fake mock seeds from older sessions
+        const clean = list.filter(i => 
+          i && i.id && 
+          !i.id.startsWith('inq_1') && !i.id.startsWith('inq_2') && !i.id.includes('seed') &&
+          i.name !== 'Elena Rostova' && i.name !== 'Marcus Chen' && 
+          i.name !== 'Sophia Vance' && i.name !== 'Aiden Thorne'
+        );
+        state.inquiries = clean;
+        localStorage.setItem(STORAGE_KEY_INQUIRIES, JSON.stringify(clean));
+      } else {
+        state.inquiries = [];
+      }
     } catch (e) {
       state.inquiries = [];
     }
 
-    // 3. Real Showcase Photos
+    // 2. Real Analytics Events — PURGE any mock entries
+    try {
+      const rawEvents = localStorage.getItem(STORAGE_KEY_EVENTS);
+      if (rawEvents) {
+        const list = JSON.parse(rawEvents);
+        const clean = list.filter(e => e && e.id && !e.id.includes('evt_seed'));
+        state.analyticsEvents = clean;
+        localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(clean));
+      } else {
+        state.analyticsEvents = [];
+      }
+    } catch (e) {
+      state.analyticsEvents = [];
+    }
+
+    // 3. Real Showcase Photos from Manifest
     try {
       const rawPhotos = localStorage.getItem(STORAGE_KEY_PHOTOS);
       state.photos = rawPhotos ? JSON.parse(rawPhotos) : ORIGINAL_PHOTOS;
@@ -110,17 +131,19 @@
       state.photos = ORIGINAL_PHOTOS;
     }
 
-    // 4. Real CMS Content
+    // 4. Real CMS Content from index.html
     try {
       const rawCMS = localStorage.getItem(STORAGE_KEY_CMS);
       state.cms = rawCMS ? Object.assign({}, ORIGINAL_CMS, JSON.parse(rawCMS)) : Object.assign({}, ORIGINAL_CMS);
+      // Ensure clean authentic email
+      state.cms['contact-email'] = 'bitwise1216@gmail.com';
     } catch (e) {
       state.cms = Object.assign({}, ORIGINAL_CMS);
     }
   }
 
   // ==========================================================================
-  // REAL-TIME DATA BRIDGE (Live Website Connection)
+  // REAL-TIME DATA BRIDGE (Streams real visitors & real form inquiries)
   // ==========================================================================
   function setupRealtimeBridge() {
     if (typeof BroadcastChannel === 'undefined') return;
@@ -131,13 +154,13 @@
         const { type, data } = event.data || {};
 
         if (type === 'NEW_VISIT') {
-          showToast(`⚡ New Real-Time Visitor on ${data.page || 'Home'}`, 'info');
+          showToast(`⚡ Real-Time Visitor on ${data.page || 'Home'}`, 'info');
           state.analyticsEvents.unshift(data);
           if (state.analyticsEvents.length > 500) state.analyticsEvents.length = 500;
           localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(state.analyticsEvents));
           renderAnalytics();
         } else if (type === 'NEW_INQUIRY') {
-          showToast(`📬 New Inquiry Received from ${data.name}!`, 'success');
+          showToast(`📬 Genuine Inquiry from ${data.name}!`, 'success');
           state.inquiries.unshift(data);
           localStorage.setItem(STORAGE_KEY_INQUIRIES, JSON.stringify(state.inquiries));
           renderInquiries();
@@ -175,22 +198,21 @@
       const isActive = pane.id === `tab-${tabId}`;
       pane.classList.toggle('active', isActive);
       if (isActive) {
-        // Trigger entrance animations on cards inside active pane
         pane.querySelectorAll('.animate-reveal').forEach((el, index) => {
           el.style.animation = 'none';
           el.offsetHeight; // reflow
-          el.style.animation = `revealUp 0.5s cubic-bezier(0.25, 1, 0.5, 1) ${index * 0.06}s backwards`;
+          el.style.animation = `revealUp 0.5s cubic-bezier(0.25, 1, 0.5, 1) ${index * 0.05}s backwards`;
         });
       }
     });
 
     const titles = {
-      analytics: { title: 'Visitor Analytics & Performance', sub: 'Real-time telemetry, genuine visitor traffic, and platform telemetry' },
-      inquiries: { title: 'Client Inquiries & Responses', sub: 'Direct messages received via the Start a Project / Get in Touch section' },
-      photography: { title: 'Photography Showcase Manager', sub: 'Curate, replace, and organize high-resolution photography assets' },
-      cms: { title: 'Website Content & Copy CMS', sub: 'Real-time editorial CMS for headlines, manifesto, and studio details' },
-      preview: { title: 'Live Website Viewport', sub: 'Interactive live rendering of your portfolio' },
-      settings: { title: 'GitHub Publishing & Sync', sub: 'One-click deployment engine to origin/main' }
+      analytics: { title: 'Visitor Analytics & Performance', sub: 'Real-time telemetry, genuine visitor traffic, and platform distribution' },
+      inquiries: { title: 'Client Inquiries & Responses', sub: 'Real messages received via the Get in touch section on your website' },
+      photography: { title: 'Photography Showcase Manager', sub: 'Curate, replace, and organize your 7 showcase photography assets' },
+      cms: { title: 'Website Content & Copy CMS', sub: 'Direct editorial editor for headlines, services, and founders' },
+      preview: { title: 'Live Viewport', sub: 'Interactive live rendering of your portfolio' },
+      settings: { title: 'Publishing & Sync', sub: 'One-click deployment engine to origin/main' }
     };
 
     const info = titles[tabId] || { title: 'Dashboard', sub: '' };
@@ -215,7 +237,7 @@
   }
 
   // ==========================================================================
-  // ANALYTICS MODULE (100% Real Authentic Data)
+  // REAL ANALYTICS MODULE (100% Genuine Metrics)
   // ==========================================================================
   function renderAnalytics() {
     const events = state.analyticsEvents;
@@ -235,13 +257,12 @@
     const todayStr = new Date().toISOString().slice(0, 10);
     const todayVis = events.filter(e => (e.timestamp || '').slice(0, 10) === todayStr).length;
 
-    // Animated counter numbers
     animateCounter('stat-total-views', totalViews);
     animateCounter('stat-unique-visitors', uniqueVis);
     animateCounter('stat-inquiries-count', totalInquiries);
     document.getElementById('stat-avg-duration').textContent = avgMinStr;
     document.getElementById('stat-conversion-rate').textContent = `${convRate}%`;
-    document.getElementById('topbar-live-visitors').textContent = `${todayVis} real visits today`;
+    document.getElementById('topbar-live-visitors').textContent = `${todayVis} visits today`;
 
     renderTrafficChart();
     renderBreakdowns();
@@ -257,13 +278,12 @@
       return;
     }
 
-    const duration = 600;
+    const duration = 650;
     const startTime = performance.now();
 
     function update(now) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = Math.round(startVal + (targetVal - startVal) * eased);
       el.textContent = current.toLocaleString();
@@ -290,12 +310,12 @@
       d.setDate(d.getDate() - i);
       const dateKey = d.toISOString().slice(0, 10);
       const label = d.toLocaleDateString('en-US', { weekday: 'short' });
-      // Real count from actual events
+      // Genuine visit count from actual events
       const count = state.analyticsEvents.filter(e => (e.timestamp || '').slice(0, 10) === dateKey).length;
       buckets.push({ dateKey, label, count });
     }
 
-    const maxCount = Math.max(...buckets.map(b => b.count), 5);
+    const maxCount = Math.max(...buckets.map(b => b.count), 4);
     const width = 600;
     const height = 180;
     const padding = 32;
@@ -387,7 +407,11 @@
     if (refContainer) {
       const keys = Object.keys(referrers);
       if (!keys.length) {
-        refContainer.innerHTML = `<div style="font-size: 13px; color: var(--text-muted); padding: 12px 0;">No traffic sources recorded yet.</div>`;
+        refContainer.innerHTML = `
+          <div style="font-size: 12.5px; color: var(--text-muted); padding: 18px 0; text-align: center;">
+            No referral traffic logged yet.
+          </div>
+        `;
       } else {
         refContainer.innerHTML = keys.slice(0, 5).map(k => {
           const count = referrers[k];
@@ -416,13 +440,19 @@
     if (!events.length) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align:center; padding: 40px; color: var(--text-muted); font-size: 13px;">
-            <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px;">
-              <div class="beacon-wrapper" style="width: 14px; height: 14px;">
-                <div class="beacon-core" style="background: #111;"></div>
-                <div class="beacon-wave" style="background: #111;"></div>
+          <td colspan="6" style="padding: 44px 20px; text-align: center;">
+            <div class="empty-state-card">
+              <div class="radar-scanner-box">
+                <div class="radar-ring ring-1"></div>
+                <div class="radar-ring ring-2"></div>
+                <div class="radar-ring ring-3"></div>
+                <div class="radar-sweep-beam"></div>
+                <div class="radar-center-blip"></div>
               </div>
-              <span>Listening for live website traffic...</span>
+              <div style="font-size: 15px; font-weight: 800; color: var(--text-primary);">Listening for Live Visitors</div>
+              <div style="font-size: 12.5px; color: var(--text-muted); max-width: 380px; line-height: 1.5;">
+                Open your portfolio in a browser tab. Each real pageview will appear here automatically in real time.
+              </div>
             </div>
           </td>
         </tr>
@@ -464,9 +494,20 @@
     if (!list.length) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align:center; padding: 48px; color: var(--text-muted);">
-            <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">No client inquiries in this view</div>
-            <div style="font-size: 12.5px;">Real-time submissions from your website's "Get in touch" section appear here automatically.</div>
+          <td colspan="6" style="padding: 56px 24px; text-align: center;">
+            <div class="empty-state-card">
+              <div class="radar-scanner-box">
+                <div class="radar-ring ring-1"></div>
+                <div class="radar-ring ring-2"></div>
+                <div class="radar-ring ring-3"></div>
+                <div class="radar-sweep-beam"></div>
+                <div class="radar-center-blip"></div>
+              </div>
+              <div style="font-size: 16px; font-weight: 800; color: var(--text-primary);">0 Client Inquiries Recorded</div>
+              <div style="font-size: 13px; color: var(--text-muted); max-width: 440px; line-height: 1.6;">
+                Your inquiry inbox is completely authentic. When a visitor submits a project request through the <strong>"Start a Project"</strong> section on your website, their genuine message will arrive here in real time.
+              </div>
+            </div>
           </td>
         </tr>
       `;
@@ -486,7 +527,7 @@
         <tr style="${isUnread ? 'font-weight: 700; color: #111;' : ''}" data-inquiry-id="${inq.id}">
           <td>${statusBadge}</td>
           <td>${escapeHtml(inq.name)}</td>
-          <td><a href="mailto:${escapeHtml(inq.email)}" style="color: var(--text-primary); text-decoration: underline; font-weight: 600;">${escapeHtml(inq.email)}</a></td>
+          <td><a href="mailto:${escapeHtml(inq.email)}" style="color: var(--text-primary); text-decoration: underline; font-weight: 700;">${escapeHtml(inq.email)}</a></td>
           <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(inq.message)}</td>
           <td style="color: var(--text-muted);">${timeStr}</td>
           <td>
@@ -547,9 +588,9 @@
     const inq = state.inquiries.find(i => i.id === id);
     if (!inq) return;
 
-    const subject = encodeURIComponent('bitwise. - Re: Your Project Inquiry');
-    const body = encodeURIComponent(`Hi ${inq.name},\n\nThank you for getting in touch with bitwise. regarding your project.\n\nWe reviewed your message:\n"${inq.message}"\n\nWe would love to discuss your vision, scope, and deliverables in detail.\n\nBest regards,\nBITWISE Atelier`);
-    window.open(`mailto:${inq.email}?subject=${subject}&body=${body}`, '_blank');
+    // Clean direct email trigger without canned fake text
+    const subject = encodeURIComponent(`Project Inquiry - bitwise.`);
+    window.open(`mailto:${inq.email}?subject=${subject}`, '_blank');
 
     inq.status = 'replied';
     inq.read = true;
@@ -620,7 +661,7 @@
               <span>${photo.size || 'Optimized'}</span>
             </div>
             <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
-              <label style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Grid Span:</label>
+              <label style="font-size: 11.5px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Grid Span:</label>
               <select class="form-select" style="padding: 4px 10px; font-size: 12.5px; flex: 1;" onchange="window.updatePhotoSpan('${photo.id}', this.value)">
                 <option value="standard" ${photo.span === 'standard' ? 'selected' : ''}>Standard</option>
                 <option value="tall" ${photo.span === 'tall' ? 'selected' : ''}>Tall Aspect</option>
@@ -715,10 +756,6 @@
     });
   };
 
-  /**
-   * HTML5 Canvas Web Optimizer
-   * Automatically keeps images crisp while ensuring they never exceed 2560px or trigger Git 408 timeouts.
-   */
   function optimizeImageFile(file, maxDimension, quality, callback) {
     const reader = new FileReader();
     reader.onload = function (e) {
@@ -813,10 +850,10 @@
     ];
 
     container.innerHTML = sections.map(sec => `
-      <div class="cms-section-card">
+      <div class="cms-section-card animate-reveal">
         <div class="cms-section-header">
           <span class="cms-section-title">${sec.title}</span>
-          <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Expand</span>
+          <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Expand</span>
         </div>
         <div class="cms-section-body">
           ${sec.fields.map(f => {
@@ -848,30 +885,152 @@
   };
 
   // ==========================================================================
-  // 3D PERSPECTIVE CARD TILT ANIMATIONS
+  // 3D PERSPECTIVE CARD TILT ANIMATIONS (Smooth 60fps Lerp)
   // ==========================================================================
   function setup3DCardTilt() {
+    let mouseX = -1000;
+    let mouseY = -1000;
+
     document.addEventListener('mousemove', function (e) {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    const cardStates = new Map();
+
+    function updateTilt() {
       const cards = document.querySelectorAll('.metric-card');
       cards.forEach(card => {
+        let current = cardStates.get(card) || { rotX: 0, rotY: 0, targetRotX: 0, targetRotY: 0 };
         const rect = card.getBoundingClientRect();
         const cardX = rect.left + rect.width / 2;
         const cardY = rect.top + rect.height / 2;
 
-        const dist = Math.hypot(e.clientX - cardX, e.clientY - cardY);
-        if (dist < 350) {
-          const deltaX = (e.clientX - cardX) / (rect.width / 2);
-          const deltaY = (e.clientY - cardY) / (rect.height / 2);
-          card.style.transform = `perspective(800px) rotateX(${-deltaY * 3}deg) rotateY(${deltaX * 3}deg) translateY(-2px)`;
+        const dist = Math.hypot(mouseX - cardX, mouseY - cardY);
+        if (dist < 340) {
+          const deltaX = (mouseX - cardX) / (rect.width / 2);
+          const deltaY = (mouseY - cardY) / (rect.height / 2);
+          current.targetRotX = -deltaY * 4.5;
+          current.targetRotY = deltaX * 4.5;
+        } else {
+          current.targetRotX = 0;
+          current.targetRotY = 0;
+        }
+
+        // Smooth damping
+        current.rotX += (current.targetRotX - current.rotX) * 0.12;
+        current.rotY += (current.targetRotY - current.rotY) * 0.12;
+
+        if (Math.abs(current.rotX) > 0.05 || Math.abs(current.rotY) > 0.05) {
+          card.style.transform = `perspective(850px) rotateX(${current.rotX.toFixed(2)}deg) rotateY(${current.rotY.toFixed(2)}deg) translateY(-3px)`;
         } else {
           card.style.transform = '';
         }
+
+        cardStates.set(card, current);
       });
-    });
+
+      requestAnimationFrame(updateTilt);
+    }
+    requestAnimationFrame(updateTilt);
   }
 
   // ==========================================================================
-  // PUBLISHING & GITHUB MODAL
+  // INTERACTIVE AMBIENT BACKGROUND PARTICLES CANVAS (Fluid Reaction)
+  // ==========================================================================
+  function setupInteractiveBackground() {
+    const canvas = document.getElementById('ambient-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    const particles = [];
+    const count = 46;
+
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        radius: Math.random() * 2.2 + 0.8,
+        alpha: Math.random() * 0.16 + 0.04
+      });
+    }
+
+    let mouse = { x: -2000, y: -2000 };
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    function loop() {
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = 0; i < count; i++) {
+        const p = particles[i];
+
+        // Interactive mouse gentle repulsion
+        const dx = p.x - mouse.x;
+        const dy = p.y - mouse.y;
+        const distToMouse = Math.hypot(dx, dy);
+        if (distToMouse < 130) {
+          const force = (130 - distToMouse) / 130;
+          p.x += (dx / distToMouse) * force * 1.5;
+          p.y += (dy / distToMouse) * force * 1.5;
+        }
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+
+        // Draw particle
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(17, 17, 17, ${p.alpha})`;
+        ctx.fill();
+
+        // Connect nearby particles
+        for (let j = i + 1; j < count; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+          if (dist < 110) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(17, 17, 17, ${0.045 * (1 - dist / 110)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+
+        // Connect to mouse cursor
+        if (distToMouse < 130) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.strokeStyle = `rgba(17, 17, 17, ${0.06 * (1 - distToMouse / 130)})`;
+          ctx.lineWidth = 0.7;
+          ctx.stroke();
+        }
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // ==========================================================================
+  // PUBLISHING & GITHUB SYNC
   // ==========================================================================
   window.publishToWebsite = function () {
     openModal('publish-modal');
@@ -907,7 +1066,7 @@
   };
 
   // ==========================================================================
-  // HELPERS & MODALS
+  // MODALS & TOAST HELPERS
   // ==========================================================================
   function setupModals() {
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -941,7 +1100,7 @@
 
     setTimeout(() => {
       toast.style.opacity = '0';
-      toast.style.transform = 'translateX(30px)';
+      toast.style.transform = 'translateX(50px)';
       setTimeout(() => toast.remove(), 250);
     }, 3500);
   }
