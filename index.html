@@ -400,10 +400,27 @@
            TAB 6: LIVE VIEWPORT
            ==================================================================== -->
       <section class="tab-pane" id="tab-preview">
-        <div class="preview-container animate-reveal stagger-1">
-          <iframe id="preview-iframe" class="preview-iframe" title="Live Website Viewport"></iframe>
-        </div>
-      </section>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Viewport Source:</span>
+              <button class="btn btn-primary btn-sm" id="btn-preview-local" onclick="window.switchPreviewSource('local')" style="font-size: 11.5px; padding: 4px 12px;">Local Studio</button>
+              <button class="btn btn-secondary btn-sm" id="btn-preview-github" onclick="window.switchPreviewSource('github')" style="font-size: 11.5px; padding: 4px 12px;">Production Site (GitHub Pages)</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="window.reloadPreview()" title="Reload Preview Frame" style="font-size: 11.5px; padding: 4px 10px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Reload</span>
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="window.openPreviewNewTab()" style="font-size: 11.5px; padding: 4px 12px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+                <span>Open in Tab</span>
+              </button>
+            </div>
+          </div>
+          <div class="preview-container animate-reveal stagger-1">
+            <iframe id="preview-iframe" class="preview-iframe" title="Live Website Viewport"></iframe>
+          </div>
+        </section>
 
       <!-- ====================================================================
            TAB 7: SETTINGS & INTEGRATIONS
@@ -641,32 +658,58 @@
 </div>
 
 <!-- PUBLISH MODAL -->
-<div class="modal-overlay" id="publish-modal">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h3 class="modal-title">Publish Updates to Live Website</h3>
-      <button class="modal-close-btn" onclick="window.closeModal('publish-modal')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5;">
-        This bundles your photography showcase, graphic design portfolio, founder cutouts, and website CMS text edits, and synchronizes them directly with <strong>bitwise1216-svg/BITWISE</strong>.
-      </p>
+  <div class="modal-overlay" id="publish-modal">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Publish Updates to Website</h3>
+        <button class="modal-close-btn" onclick="window.closeModal('publish-modal')">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+        <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+          Synchronize photography showcase, graphic design portfolio, founder media, and website text copy directly with your studio files and live website.
+        </p>
 
-      <div id="publish-log" style="display: none; background: #0A0A0A; color: #10B981; padding: 14px 16px; border-radius: var(--radius-md); font-family: monospace; font-size: 12px; max-height: 140px; overflow-y: auto; white-space: pre-wrap;"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary btn-sm" onclick="window.closeModal('publish-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="window.confirmPublish()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-        <span>Push to Live Site</span>
-      </button>
+        <!-- Direct Folder Connection -->
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-primary);">1. Local Studio Folder Sync</span>
+            <span id="folder-sync-status" class="badge badge-neutral" style="font-size: 11px;">Not Linked</span>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
+            Connect your local <code>BITWISE</code> project folder to automatically write updated files (<code>js/site-data.js</code>, uploaded photography, and <code>manifest.json</code>) directly to disk.
+          </p>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-select-folder" onclick="window.selectLocalWebsiteFolder()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <span id="btn-select-folder-label">Select BITWISE Folder</span>
+          </button>
+        </div>
+
+        <div id="publish-log" style="display: none; background: #0A0A0A; color: #10B981; padding: 14px 16px; border-radius: var(--radius-md); font-family: monospace; font-size: 12px; max-height: 150px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5;"></div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button class="btn btn-secondary btn-sm" onclick="window.downloadSiteDataJs()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download site-data.js</span>
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary btn-sm" onclick="window.closeModal('publish-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="window.confirmPublish()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>Publish & Sync Changes</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- TOAST CONTAINER -->
+  <!-- TOAST CONTAINER -->
 <div class="toast-container" id="toast-container"></div>
 
+<script src="js/site-data.js"></script>
+<script src="../BITWISE/js/site-data.js"></script>
 <script src="js/dashboard.js"></script>
 </body>
 </html>
+
+
+

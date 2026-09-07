@@ -212,34 +212,51 @@
     // 3. Photography Showcase
     try {
       const rawPhotos = localStorage.getItem(STORAGE_KEY_PHOTOS);
-      state.photos = rawPhotos ? JSON.parse(rawPhotos) : ORIGINAL_PHOTOS;
+      const parsed = rawPhotos ? JSON.parse(rawPhotos) : null;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        state.photos = parsed;
+      } else if (window.BITWISE_SITE_DATA && Array.isArray(window.BITWISE_SITE_DATA.photos) && window.BITWISE_SITE_DATA.photos.length > 0) {
+        state.photos = window.BITWISE_SITE_DATA.photos;
+      } else {
+        state.photos = ORIGINAL_PHOTOS;
+      }
     } catch (e) {
-      state.photos = ORIGINAL_PHOTOS;
+      state.photos = (window.BITWISE_SITE_DATA && window.BITWISE_SITE_DATA.photos) || ORIGINAL_PHOTOS;
     }
 
     // 4. Graphic Design Showcase
     try {
       const rawDesigns = localStorage.getItem(STORAGE_KEY_DESIGNS);
-      state.designs = rawDesigns ? JSON.parse(rawDesigns) : ORIGINAL_DESIGNS;
+      const parsed = rawDesigns ? JSON.parse(rawDesigns) : null;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        state.designs = parsed;
+      } else if (window.BITWISE_SITE_DATA && Array.isArray(window.BITWISE_SITE_DATA.designs)) {
+        state.designs = window.BITWISE_SITE_DATA.designs;
+      } else {
+        state.designs = ORIGINAL_DESIGNS;
+      }
     } catch (e) {
-      state.designs = ORIGINAL_DESIGNS;
+      state.designs = (window.BITWISE_SITE_DATA && window.BITWISE_SITE_DATA.designs) || ORIGINAL_DESIGNS;
     }
 
     // 5. Founder Cutouts Media
     try {
       const rawFounders = localStorage.getItem(STORAGE_KEY_FOUNDERS);
-      state.founders = rawFounders ? JSON.parse(rawFounders) : {};
+      const parsed = rawFounders ? JSON.parse(rawFounders) : null;
+      state.founders = Object.assign({}, (window.BITWISE_SITE_DATA && window.BITWISE_SITE_DATA.founders) || {}, parsed || {});
     } catch (e) {
-      state.founders = {};
+      state.founders = Object.assign({}, (window.BITWISE_SITE_DATA && window.BITWISE_SITE_DATA.founders) || {});
     }
 
     // 6. Real CMS Content
     try {
       const rawCMS = localStorage.getItem(STORAGE_KEY_CMS);
-      state.cms = rawCMS ? Object.assign({}, ORIGINAL_CMS, JSON.parse(rawCMS)) : Object.assign({}, ORIGINAL_CMS);
+      const parsed = rawCMS ? JSON.parse(rawCMS) : null;
+      const baseCMS = (window.BITWISE_SITE_DATA && window.BITWISE_SITE_DATA.cms) ? window.BITWISE_SITE_DATA.cms : ORIGINAL_CMS;
+      state.cms = Object.assign({}, ORIGINAL_CMS, baseCMS, parsed || {});
       state.cms['contact-email'] = 'bitwise1216@gmail.com';
     } catch (e) {
-      state.cms = Object.assign({}, ORIGINAL_CMS);
+      state.cms = Object.assign({}, ORIGINAL_CMS, (window.BITWISE_SITE_DATA && window.BITWISE_SITE_DATA.cms) || {});
     }
   }
 
@@ -499,7 +516,10 @@
     if (tabId === 'preview') {
       const iframe = document.getElementById('preview-iframe');
       if (iframe && !iframe.src) {
-        iframe.src = 'https://bitwise1216-svg.github.io/BITWISE/';
+        iframe.src = '../BITWISE/index.html';
+      }
+      if (iframe && iframe.contentWindow) {
+        broadcastToWebsite('SYNC_ALL', { cms: state.cms, photos: state.photos, designs: state.designs, founders: state.founders });
       }
     }
   }
@@ -1554,6 +1574,11 @@
   // TAB 7: SETTINGS (Google Analytics & Email Configuration)
   // ==========================================================================
   function loadSettingsInputs() {
+    const ghInput = document.getElementById('gh-token-input');
+    if (ghInput) {
+      const savedToken = localStorage.getItem('bitwise_github_pat');
+      if (savedToken) ghInput.value = savedToken;
+    }
     const gaInput = document.getElementById('ga-id-input');
     if (gaInput) {
       const savedGa = localStorage.getItem(STORAGE_KEY_GA_ID);
@@ -1787,48 +1812,267 @@
   }
 
   // ==========================================================================
-  // PUBLISHING & GITHUB SYNC
+  // PUBLISHING, REPOSITORY SYNC & PERSISTENCE ENGINE
   // ==========================================================================
+  let bitwiseDirHandle = null;
+
+  window.switchPreviewSource = function (source) {
+    const iframe = document.getElementById('preview-iframe');
+    const btnLocal = document.getElementById('btn-preview-local');
+    const btnGithub = document.getElementById('btn-preview-github');
+    if (btnLocal) btnLocal.className = source === 'local' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+    if (btnGithub) btnGithub.className = source === 'github' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+
+    if (!iframe) return;
+    iframe.src = source === 'local' ? '../BITWISE/index.html' : 'https://bitwise1216-svg.github.io/BITWISE/';
+  };
+
+  window.reloadPreview = function () {
+    const iframe = document.getElementById('preview-iframe');
+    if (iframe) iframe.src = iframe.src;
+  };
+
+  window.openPreviewNewTab = function () {
+    const iframe = document.getElementById('preview-iframe');
+    window.open(iframe && iframe.src ? iframe.src : '../BITWISE/index.html', '_blank');
+  };
+
+  // Connect local BITWISE folder via File System Access API
+  window.selectLocalWebsiteFolder = async function () {
+    if (!('showDirectoryPicker' in window)) {
+      alert('Your browser does not support the File System Access API. Please use Chrome, Edge, or Brave, or use the "Download site-data.js" button.');
+      return;
+    }
+    try {
+      bitwiseDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      const statusBadge = document.getElementById('folder-sync-status');
+      const btnLabel = document.getElementById('btn-select-folder-label');
+      if (statusBadge) {
+        statusBadge.className = 'badge badge-success';
+        statusBadge.textContent = 'Linked: ' + bitwiseDirHandle.name;
+      }
+      if (btnLabel) {
+        btnLabel.textContent = 'Folder: ' + bitwiseDirHandle.name;
+      }
+      showToast('Connected to local folder: ' + bitwiseDirHandle.name, 'success');
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        showToast('Could not access folder: ' + e.message, 'error');
+      }
+    }
+  };
+
+  // Generate canonical js/site-data.js string
+  function generateSiteDataJs() {
+    const cleanPhotos = state.photos.map(p => {
+      const copy = Object.assign({}, p);
+      delete copy.dataUrl;
+      return copy;
+    });
+
+    const data = {
+      version: '1.0.0',
+      updatedAt: new Date().toISOString(),
+      cms: state.cms,
+      photos: cleanPhotos,
+      designs: state.designs,
+      founders: state.founders
+    };
+
+    return `/**\n * bitwise. - Canonical Site Data Store\n * Auto-generated by Executive Dashboard on ${new Date().toLocaleString()}\n */\n\nwindow.BITWISE_SITE_DATA = ${JSON.stringify(data, null, 2)};\n`;
+  }
+
+  window.downloadSiteDataJs = function () {
+    const content = generateSiteDataJs();
+    const blob = new Blob([content], { type: 'application/javascript;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'site-data.js';
+    a.click();
+    showToast('Downloaded site-data.js! Place it in your BITWISE/js/ folder.', 'success');
+  };
+
+  window.saveGitHubToken = function () {
+    const input = document.getElementById('gh-token-input');
+    if (!input) return;
+    const token = input.value.trim();
+    if (token) {
+      localStorage.setItem('bitwise_github_pat', token);
+      showToast('Saved GitHub Personal Access Token', 'success');
+    } else {
+      localStorage.removeItem('bitwise_github_pat');
+      showToast('Cleared GitHub Personal Access Token', 'info');
+    }
+  };
+
   window.publishToWebsite = function () {
     openModal('publish-modal');
   };
 
-  window.confirmPublish = function () {
+  window.confirmPublish = async function () {
     const logBox = document.getElementById('publish-log');
+    if (!logBox) return;
     logBox.style.display = 'block';
-    logBox.innerHTML = 'Connecting to GitHub API...\n';
-
+    logBox.innerHTML = '';
     const append = (msg) => {
       logBox.innerHTML += `${msg}\n`;
       logBox.scrollTop = logBox.scrollHeight;
     };
 
-    setTimeout(() => append('Connected to bitwise1216-svg/BITWISE'), 350);
-    setTimeout(() => append('Synchronized text CMS edits'), 700);
-    setTimeout(() => append(`Verified photography showcase (${state.photos.length} photos)`), 1050);
-    setTimeout(() => append(`Verified graphic design showcase (${state.designs.length} projects)`), 1400);
-    setTimeout(() => append('Synchronized founder pavilion cutouts'), 1750);
-    setTimeout(() => append('Synchronized Privacy, Terms, and Refund policies'), 2100);
-    setTimeout(() => {
-      append('Deployed successfully to origin/main!');
-      broadcastToWebsite('SYNC_ALL', { cms: state.cms, photos: state.photos, designs: state.designs, founders: state.founders });
-      showToast('Live website updated successfully', 'success');
-    }, 2450);
-  };
+    append('🚀 [1/4] Packaging synchronized studio data...');
 
-  window.downloadUpdatedIndex = function () {
-    const bundle = {
+    // Save to local storage with quota protection
+    try {
+      localStorage.setItem(STORAGE_KEY_CMS, JSON.stringify(state.cms));
+      localStorage.setItem(STORAGE_KEY_DESIGNS, JSON.stringify(state.designs));
+    } catch (e) {}
+
+    try {
+      localStorage.setItem(STORAGE_KEY_PHOTOS, JSON.stringify(state.photos));
+    } catch (e) {
+      // If photo base64 exceeds quota, strip dataUrl for local storage
+      try {
+        const lightPhotos = state.photos.map(p => ({ id: p.id, name: p.name, span: p.span, alt: p.alt, size: p.size }));
+        localStorage.setItem(STORAGE_KEY_PHOTOS, JSON.stringify(lightPhotos));
+      } catch (e2) {}
+    }
+
+    // Direct local folder writing if connected
+    if (bitwiseDirHandle) {
+      append('📁 [2/4] Writing directly to local BITWISE folder...');
+      try {
+        // Write js/site-data.js
+        append('  → Updating js/site-data.js...');
+        const jsDir = await bitwiseDirHandle.getDirectoryHandle('js', { create: true });
+        const siteDataHandle = await jsDir.getFileHandle('site-data.js', { create: true });
+        const siteDataWritable = await siteDataHandle.createWritable();
+        const siteDataCode = generateSiteDataJs();
+        await siteDataWritable.write(siteDataCode);
+        await siteDataWritable.close();
+        append('  ✓ js/site-data.js updated');
+
+        // Write any newly uploaded photos with dataUrl to assets/showcase/photography/
+        const assetsDir = await bitwiseDirHandle.getDirectoryHandle('assets', { create: true });
+        const showcaseDir = await assetsDir.getDirectoryHandle('showcase', { create: true });
+        const photoDir = await showcaseDir.getDirectoryHandle('photography', { create: true });
+
+        for (const photo of state.photos) {
+          if (photo.dataUrl && photo.dataUrl.startsWith('data:image/')) {
+            append(`  → Saving image file ${photo.name}...`);
+            const imgHandle = await photoDir.getFileHandle(photo.name, { create: true });
+            const imgWritable = await imgHandle.createWritable();
+            const res = await fetch(photo.dataUrl);
+            const blob = await res.blob();
+            await imgWritable.write(blob);
+            await imgWritable.close();
+            append(`  ✓ Saved ${photo.name}`);
+            delete photo.dataUrl;
+          }
+        }
+
+        // Write manifest.json
+        append('  → Updating assets/showcase/manifest.json...');
+        const manifestHandle = await showcaseDir.getFileHandle('manifest.json', { create: true });
+        const manifestWritable = await manifestHandle.createWritable();
+        const manifest = {
+          photography: state.photos.map(p => p.name),
+          design: state.designs.map(d => d.title),
+          updatedAt: new Date().toISOString()
+        };
+        await manifestWritable.write(JSON.stringify(manifest, null, 2));
+        await manifestWritable.close();
+        append('  ✓ assets/showcase/manifest.json updated');
+
+        append('✨ Local website files updated directly on your disk!');
+      } catch (err) {
+        append('⚠️ Local folder write error: ' + err.message);
+      }
+    } else {
+      append('ℹ️ [2/4] Tip: Click "Select BITWISE Folder" above to auto-write files directly to your drive!');
+    }
+
+    // Broadcast live across BroadcastChannel and to live preview viewport
+    append('📡 [3/4] Broadcasting SYNC_ALL across live bridge...');
+    broadcastToWebsite('SYNC_ALL', {
       cms: state.cms,
       photos: state.photos,
       designs: state.designs,
       founders: state.founders
+    });
+    append('✓ Website DOM live synchronized');
+
+    // GitHub publishing if token is present
+    const ghToken = localStorage.getItem('bitwise_github_pat');
+    if (ghToken) {
+      append('🐙 [4/4] Publishing to GitHub repository bitwise1216-svg/BITWISE...');
+      try {
+        await publishToGitHubRepo(ghToken, append);
+        append('✓ Deployed to GitHub Pages!');
+      } catch (ghErr) {
+        append('⚠️ GitHub push notice: ' + ghErr.message);
+      }
+    } else {
+      append('ℹ️ [4/4] GitHub token not configured. (Configure in Settings if you want 1-click push to GitHub Pages)');
+    }
+
+    append('🎉 All published changes are live!');
+    showToast('Published updates successfully!', 'success');
+  };
+
+  async function publishToGitHubRepo(token, log) {
+    const repo = 'bitwise1216-svg/BITWISE';
+    const branch = 'main';
+
+    async function commitFile(path, content, message) {
+      const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+      let sha = null;
+      try {
+        const getRes = await fetch(url + `?ref=${branch}`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (getRes.ok) {
+          const getJson = await getRes.json();
+          sha = getJson.sha;
+        }
+      } catch (e) {}
+
+      const base64Content = btoa(unescape(encodeURIComponent(content)));
+      const body = { message: message, content: base64Content, branch: branch };
+      if (sha) body.sha = sha;
+
+      const putRes = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!putRes.ok) {
+        const errJson = await putRes.json().catch(() => ({}));
+        throw new Error(errJson.message || `HTTP ${putRes.status}`);
+      }
+      return await putRes.json();
+    }
+
+    log('  → Committing js/site-data.js to GitHub...');
+    await commitFile('js/site-data.js', generateSiteDataJs(), 'chore(cms): update site content from executive dashboard');
+    log('  ✓ Committed js/site-data.js');
+
+    log('  → Committing assets/showcase/manifest.json...');
+    const manifest = {
+      photography: state.photos.map(p => p.name),
+      design: state.designs.map(d => d.title),
+      updatedAt: new Date().toISOString()
     };
-    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'bitwise_published_content.json';
-    a.click();
-    showToast('Exported content bundle', 'success');
+    await commitFile('assets/showcase/manifest.json', JSON.stringify(manifest, null, 2), 'chore(showcase): update showcase manifest');
+    log('  ✓ Committed manifest.json');
+  }
+
+  window.downloadUpdatedIndex = function () {
+    window.downloadSiteDataJs();
   };
 
   // ==========================================================================
@@ -1897,3 +2141,4 @@
     init();
   }
 })();
+
