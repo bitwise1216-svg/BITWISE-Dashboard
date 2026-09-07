@@ -83,12 +83,16 @@
       </div>
     </div>
   </aside>
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
   <!-- MAIN VIEWPORT -->
   <main class="main-wrapper">
     <!-- TOPBAR -->
     <header class="topbar">
-      <div class="topbar-left">
+            <div class="topbar-left">
+        <button class="mobile-sidebar-toggle" id="sidebar-toggle" aria-label="Toggle navigation menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
         <div>
           <h1 class="page-title" id="page-title">Visitor Analytics &amp; Performance</h1>
           <p class="page-subtitle" id="page-subtitle">Real-time telemetry, genuine visitor traffic, and platform distribution</p>
@@ -307,7 +311,7 @@
         <div class="card-header" style="margin-bottom: 20px;">
           <div>
             <h3 class="card-title">Curate Photography Showcase</h3>
-            <p class="card-subtitle">Manage showcase title, description, and high-resolution photography</p>
+            <p class="card-subtitle">Manage showcase title, description, and high-resolution photography &bull; <strong id="photo-count-badge" style="color:var(--text-primary);">0 / 12 Slots</strong></p>
           </div>
           <div>
             <button class="btn btn-primary" onclick="window.openUploadModal()">

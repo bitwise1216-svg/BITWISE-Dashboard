@@ -428,10 +428,34 @@
   // ==========================================================================
   function setupNavigation() {
     const navItems = document.querySelectorAll('.nav-item[data-tab]');
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const toggleBtn = document.getElementById('sidebar-toggle');
+
+    function closeMobileSidebar() {
+      if (sidebar) sidebar.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.remove('active');
+    }
+
+    function toggleMobileSidebar() {
+      if (sidebar) sidebar.classList.toggle('mobile-open');
+      if (backdrop) backdrop.classList.toggle('active');
+    }
+
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', toggleMobileSidebar);
+    }
+    if (backdrop) {
+      backdrop.addEventListener('click', closeMobileSidebar);
+    }
+
     navItems.forEach(item => {
       item.addEventListener('click', () => {
         const targetTab = item.getAttribute('data-tab');
         switchTab(targetTab);
+        if (window.innerWidth <= 1024) {
+          closeMobileSidebar();
+        }
       });
     });
 
@@ -872,8 +896,10 @@
   };
 
   // ==========================================================================
-  // TAB 3: PHOTOGRAPHY SHOWCASE MANAGER
+  // TAB 3: PHOTOGRAPHY SHOWCASE MANAGER (12 Photos Maximum)
   // ==========================================================================
+  const MAX_PHOTO_SLOTS = 12;
+
   function renderPhotos() {
     const grid = document.getElementById('photography-media-grid');
     if (!grid) return;
@@ -883,12 +909,14 @@
     if (titleInput) titleInput.value = state.cms['photo-title'] || 'Photography';
     if (subInput) subInput.value = state.cms['photo-subtitle'] || 'Selected work from our editorial and brand photography projects.';
 
-    if (!state.photos.length) {
-      grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No showcase photos found in gallery.</div>`;
-      return;
+    const countBadge = document.getElementById('photo-count-badge');
+    if (countBadge) {
+      countBadge.textContent = `${state.photos.length} / ${MAX_PHOTO_SLOTS} Slots`;
+      countBadge.style.color = state.photos.length >= MAX_PHOTO_SLOTS ? '#10B981' : 'var(--text-primary)';
     }
 
-    grid.innerHTML = state.photos.map((photo, index) => {
+    const activePhotos = state.photos.slice(0, MAX_PHOTO_SLOTS);
+    let cardsHtml = activePhotos.map((photo, index) => {
       const src = photo.dataUrl || `${RAW_BASE_URL}/assets/showcase/photography/${photo.name}`;
       const spanLabel = photo.span === 'tall' ? 'Tall Aspect' : photo.span === 'wide' ? 'Wide Aspect' : 'Standard';
 
@@ -901,7 +929,7 @@
           <div class="media-details">
             <div class="media-filename">${escapeHtml(photo.name)}</div>
             <div class="media-meta">
-              <span>Photo #${index + 1}</span>
+              <span>Photo Slot #${index + 1}</span>
               <span>${photo.size || 'Optimized'}</span>
             </div>
             <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
@@ -920,6 +948,23 @@
         </div>
       `;
     }).join('');
+
+    // Fill remaining slots up to 12
+    for (let i = activePhotos.length; i < MAX_PHOTO_SLOTS; i++) {
+      const slotNum = i + 1;
+      const formattedNum = slotNum < 10 ? '0' + slotNum : slotNum;
+      cardsHtml += `
+        <div class="media-card media-card-slot animate-reveal" onclick="window.openUploadModal()" style="border: 2px dashed var(--border-medium); background: rgba(255,255,255,0.02); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; padding: 24px; text-align: center; border-radius: var(--radius-lg); transition: all 0.25s ease;">
+          <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--bg-surface); border: 1px solid var(--border-medium); display: flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </div>
+          <div style="font-weight: 800; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">Photo Slot ${formattedNum}</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Available &bull; Click to upload photo</div>
+        </div>
+      `;
+    }
+
+    grid.innerHTML = cardsHtml;
   }
 
   window.updatePhotoHeadings = function () {
@@ -984,12 +1029,22 @@
   };
 
   window.openUploadModal = function () {
+    if (state.photos.length >= MAX_PHOTO_SLOTS) {
+      showToast(`Showcase photo limit reached (12/12). Replace or delete an existing photo.`, 'error');
+      return;
+    }
     openModal('upload-photo-modal');
   };
 
   window.handleNewPhotoUpload = function (fileInput) {
     const file = fileInput.files[0];
     if (!file) return;
+
+    if (state.photos.length >= MAX_PHOTO_SLOTS) {
+      showToast(`Showcase photo limit reached (12/12). Replace or delete an existing photo.`, 'error');
+      fileInput.value = '';
+      return;
+    }
 
     showToast('Optimizing and adding photo...', 'info');
     optimizeImageFile(file, 2560, 0.85, function (optimizedDataUrl, newSizeStr, isTall) {
@@ -1009,13 +1064,15 @@
       broadcastToWebsite('PHOTOS_UPDATE', state.photos);
       closeModal('upload-photo-modal');
       fileInput.value = '';
-      showToast(`Added ${cleanName} to showcase`, 'success');
+      showToast(`Added ${cleanName} to showcase (${state.photos.length}/${MAX_PHOTO_SLOTS})`, 'success');
     });
   };
 
   // ==========================================================================
-  // TAB 4: GRAPHIC DESIGN SHOWCASE MANAGER
+  // TAB 4: GRAPHIC DESIGN SHOWCASE MANAGER (6 Projects Maximum)
   // ==========================================================================
+  const MAX_DESIGN_SLOTS = 6;
+
   function renderDesigns() {
     const grid = document.getElementById('design-media-grid');
     if (!grid) return;
@@ -1025,12 +1082,14 @@
     if (titleInput) titleInput.value = state.cms['design-title'] || 'Graphic Design';
     if (subInput) subInput.value = state.cms['design-subtitle'] || 'Brand identities, visual systems, and creative direction.';
 
-    if (!state.designs.length) {
-      grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No graphic design projects in showcase. Click "+ Add Design Project" to create one.</div>`;
-      return;
+    const countBadge = document.getElementById('design-count-badge');
+    if (countBadge) {
+      countBadge.textContent = `${state.designs.length} / ${MAX_DESIGN_SLOTS} Slots`;
+      countBadge.style.color = state.designs.length >= MAX_DESIGN_SLOTS ? '#10B981' : 'var(--text-primary)';
     }
 
-    grid.innerHTML = state.designs.map((item, index) => {
+    const activeDesigns = state.designs.slice(0, MAX_DESIGN_SLOTS);
+    let cardsHtml = activeDesigns.map((item, index) => {
       const imgHtml = item.image
         ? `<img src="${item.image}" alt="${escapeHtml(item.title)}" class="design-preview-img">`
         : `<div style="color: var(--text-muted); font-size: 13px; font-weight: 700; text-align: center; padding: 20px;">No image uploaded</div>`;
@@ -1056,6 +1115,22 @@
         </div>
       `;
     }).join('');
+
+    // Fill remaining slots up to 6
+    for (let i = activeDesigns.length; i < MAX_DESIGN_SLOTS; i++) {
+      const slotNum = i + 1;
+      cardsHtml += `
+        <div class="design-project-card animate-reveal" onclick="window.openAddDesignModal()" style="border: 2px dashed var(--border-medium); background: rgba(255,255,255,0.02); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; padding: 24px; text-align: center; border-radius: var(--radius-lg); transition: all 0.25s ease;">
+          <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--bg-surface); border: 1px solid var(--border-medium); display: flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </div>
+          <div style="font-weight: 800; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">Design Slot 0${slotNum}</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Available &bull; Click to add project</div>
+        </div>
+      `;
+    }
+
+    grid.innerHTML = cardsHtml;
   }
 
   window.updateDesignHeadings = function () {
@@ -1068,6 +1143,10 @@
   };
 
   window.openAddDesignModal = function () {
+    if (!state.editingDesignId && state.designs.length >= MAX_DESIGN_SLOTS) {
+      showToast(`Graphic design showcase limit reached (6/6 projects). Remove or edit an existing project.`, 'error');
+      return;
+    }
     state.editingDesignId = null;
     state.currentDesignImage = null;
     document.getElementById('design-modal-title').textContent = 'Add Graphic Design Project';
@@ -1128,6 +1207,10 @@
       }
       showToast('Updated design project', 'success');
     } else {
+      if (state.designs.length >= MAX_DESIGN_SLOTS) {
+        showToast(`Graphic design showcase limit reached (6/6 projects). Cannot add more.`, 'error');
+        return;
+      }
       const newItem = {
         id: 'design-' + Date.now(),
         title: title,
@@ -1137,7 +1220,7 @@
         image: state.currentDesignImage || ''
       };
       state.designs.push(newItem);
-      showToast('Added new design project', 'success');
+      showToast(`Added new design project (${state.designs.length}/${MAX_DESIGN_SLOTS})`, 'success');
     }
 
     localStorage.setItem(STORAGE_KEY_DESIGNS, JSON.stringify(state.designs));
