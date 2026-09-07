@@ -1,55 +1,57 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    BITWISE. EXECUTIVE ADMIN DASHBOARD — ULTRA-ANIMATED MONOCHROME LIGHT THEME
    Bespoke Design System | Liquid Glass | High-Framerate Micro-Animations
    ========================================================================== */
 
 :root {
-  /* ── Backgrounds ── */
-  --bg-base:             #FFFFFF;
-  --bg-soft:             #FAFAFA;
-  --bg-muted:            #F5F5F5;
-  --bg-subtle:           #EEEEEE;
-  --bg-card:             rgba(255, 255, 255, 0.94);
-  --bg-glass:            rgba(255, 255, 255, 0.86);
-  --bg-dark:             #0A0A0A;
+  /* ── Backgrounds (Deep Obsidian Theme) ── */
+  --bg-base:             #060608;
+  --bg-soft:             #09090C;
+  --bg-muted:            #0E0E13;
+  --bg-subtle:           #14141B;
+  --bg-card:             rgba(15, 15, 20, 0.88);
+  --bg-glass:            rgba(11, 11, 15, 0.82);
+  --bg-dark:             #000000;
 
-  /* ── Text ── */
-  --text-primary:        #111111;
-  --text-secondary:      #444444;
-  --text-muted:          #777777;
-  --text-subtle:         #999999;
+  /* ── Text Hierarchy ── */
+  --text-primary:        #FFFFFF;
+  --text-secondary:      #D4D4D8;
+  --text-muted:          #9E9EA6;
+  --text-subtle:         #5C5C64;
   --text-on-dark:        #FFFFFF;
 
-  /* ── Borders ── */
-  --border-subtle:       #F0F0F0;
-  --border-medium:       #E2E2E2;
-  --border-strong:       #CCCCCC;
-  --border-dark:         #111111;
+  /* ── Borders & Outlines ── */
+  --border-subtle:       rgba(255, 255, 255, 0.08);
+  --border-medium:       rgba(255, 255, 255, 0.14);
+  --border-strong:       rgba(255, 255, 255, 0.24);
+  --border-dark:         rgba(255, 255, 255, 0.05);
 
-  /* ── Brand Monochrome Accent ── */
-  --accent-primary:      #111111;
-  --accent-hover:        #2B2B2B;
-  --accent-active:       #000000;
-  --accent-soft:         #F3F3F3;
-  --accent-glow:         rgba(0, 0, 0, 0.08);
+  /* ── Brand Luxury Champagne Gold & Chrome Accents ── */
+  --accent-primary:      #FFFFFF;
+  --accent-hover:        #E4D9C7;
+  --accent-active:       #C8B89E;
+  --accent-soft:         rgba(255, 255, 255, 0.06);
+  --accent-glow:         rgba(200, 184, 158, 0.25);
+  --accent-gold:         #C8B89E;
+  --accent-gold-soft:    rgba(200, 184, 158, 0.12);
 
   /* ── Status Indicators ── */
   --status-live:         #10B981;
-  --status-live-bg:      rgba(16, 185, 129, 0.08);
-  --status-live-border:  rgba(16, 185, 129, 0.25);
-  --status-live-glow:    rgba(16, 185, 129, 0.4);
+  --status-live-bg:      rgba(16, 185, 129, 0.12);
+  --status-live-border:  rgba(16, 185, 129, 0.35);
+  --status-live-glow:    rgba(16, 185, 129, 0.5);
 
   /* ── Typography ── */
   --font-display:        'Bebas Neue', 'Inter', sans-serif;
   --font-body:           'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   /* ── Shadows & Elevation ── */
-  --shadow-xs:           0 1px 3px rgba(0, 0, 0, 0.03);
-  --shadow-sm:           0 3px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md:           0 8px 20px rgba(0, 0, 0, 0.06);
-  --shadow-lg:           0 16px 36px rgba(0, 0, 0, 0.08);
-  --shadow-xl:           0 24px 50px -10px rgba(0, 0, 0, 0.12);
-  --shadow-card:         0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-xs:           0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-sm:           0 3px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md:           0 8px 24px rgba(0, 0, 0, 0.65);
+  --shadow-lg:           0 16px 40px rgba(0, 0, 0, 0.8);
+  --shadow-xl:           0 24px 60px -10px rgba(0, 0, 0, 0.95);
+  --shadow-card:         0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   /* ── Radii ── */
   --radius-xs:           4px;
@@ -69,7 +71,6 @@
   --sidebar-width:       270px;
   --header-height:       72px;
 }
-
 /* ==========================================================================
    CSS Reset & Base
    ========================================================================== */
@@ -1439,4 +1440,143 @@ html, body {
     opacity: 1;
     transform: translateX(0) scale(1);
   }
+}
+
+/* ==========================================================================
+   Graphic Design Showcase Grid & Cards
+   ========================================================================== */
+.design-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.design-project-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.3s var(--ease-apple-spring), border-color 0.25s ease, box-shadow 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.design-project-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-gold);
+  box-shadow: var(--shadow-md);
+}
+
+.design-preview-container {
+  height: 200px;
+  background: var(--bg-muted);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.design-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+
+.design-project-card:hover .design-preview-img {
+  transform: scale(1.05);
+}
+
+.design-details {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.design-badge-category {
+  display: inline-block;
+  padding: 3px 9px;
+  background: var(--accent-gold-soft);
+  color: var(--accent-gold);
+  border: 1px solid rgba(200, 184, 158, 0.3);
+  border-radius: var(--radius-pill);
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.design-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.design-client {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.design-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   Founder Media Transparency Checkerboard & Upload Cards
+   ========================================================================== */
+.founder-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 14px;
+}
+
+.founder-media-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cutout-checkerboard {
+  height: 220px;
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #121216;
+  background-image: linear-gradient(45deg, #18181F 25%, transparent 25%),
+                    linear-gradient(-45deg, #18181F 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #18181F 75%),
+                    linear-gradient(-45deg, transparent 75%, #18181F 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  border: 1px dashed var(--border-medium);
+}
+
+.cutout-img-preview {
+  max-height: 95%;
+  max-width: 95%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
+  transition: transform 0.3s ease;
+}
+
+.founder-media-card:hover .cutout-img-preview {
+  transform: scale(1.04);
 }
