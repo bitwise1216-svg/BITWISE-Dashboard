@@ -1837,32 +1837,7 @@
     window.open(iframe && iframe.src ? iframe.src : '../BITWISE/index.html', '_blank');
   };
 
-  // Connect local BITWISE folder via File System Access API
-  window.selectLocalWebsiteFolder = async function () {
-    if (!('showDirectoryPicker' in window)) {
-      alert('Your browser does not support the File System Access API. Please use Chrome, Edge, or Brave, or use the "Download site-data.js" button.');
-      return;
-    }
-    try {
-      bitwiseDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-      const statusBadge = document.getElementById('folder-sync-status');
-      const btnLabel = document.getElementById('btn-select-folder-label');
-      if (statusBadge) {
-        statusBadge.className = 'badge badge-success';
-        statusBadge.textContent = 'Linked: ' + bitwiseDirHandle.name;
-      }
-      if (btnLabel) {
-        btnLabel.textContent = 'Folder: ' + bitwiseDirHandle.name;
-      }
-      showToast('Connected to local folder: ' + bitwiseDirHandle.name, 'success');
-    } catch (e) {
-      if (e.name !== 'AbortError') {
-        showToast('Could not access folder: ' + e.message, 'error');
-      }
-    }
-  };
-
-  // Generate canonical js/site-data.js string
+  // Canonical Site Data Generator
   function generateSiteDataJs() {
     const cleanPhotos = state.photos.map(p => {
       const copy = Object.assign({}, p);
@@ -1892,6 +1867,10 @@
     showToast('Downloaded site-data.js! Place it in your BITWISE/js/ folder.', 'success');
   };
 
+  window.downloadUpdatedIndex = function () {
+    window.downloadSiteDataJs();
+  };
+
   window.saveGitHubToken = function () {
     const input = document.getElementById('gh-token-input');
     if (!input) return;
@@ -1905,130 +1884,158 @@
     }
   };
 
-  window.publishToWebsite = function () {
-    openModal('publish-modal');
+  // 1-Time Setup Modal: Save token and publish immediately
+  window.saveTokenAndPublish = function () {
+    const input = document.getElementById('modal-gh-token-input');
+    const errBox = document.getElementById('modal-gh-error');
+    if (!input || !input.value.trim()) {
+      if (errBox) {
+        errBox.style.display = 'block';
+        errBox.textContent = 'Please paste your GitHub Personal Access Token.';
+      }
+      return;
+    }
+    const token = input.value.trim();
+    localStorage.setItem('bitwise_github_pat', token);
+    const settingsInput = document.getElementById('gh-token-input');
+    if (settingsInput) settingsInput.value = token;
+    closeModal('github-setup-modal');
+    showToast('Connected to GitHub! Publishing...', 'info');
+    window.publishToWebsite();
   };
 
-  window.confirmPublish = async function () {
-    const logBox = document.getElementById('publish-log');
-    if (!logBox) return;
-    logBox.style.display = 'block';
-    logBox.innerHTML = '';
-    const append = (msg) => {
-      logBox.innerHTML += `${msg}\n`;
-      logBox.scrollTop = logBox.scrollHeight;
-    };
-
-    append('🚀 [1/4] Packaging synchronized studio data...');
-
-    // Save to local storage with quota protection
-    try {
-      localStorage.setItem(STORAGE_KEY_CMS, JSON.stringify(state.cms));
-      localStorage.setItem(STORAGE_KEY_DESIGNS, JSON.stringify(state.designs));
-    } catch (e) {}
-
-    try {
-      localStorage.setItem(STORAGE_KEY_PHOTOS, JSON.stringify(state.photos));
-    } catch (e) {
-      // If photo base64 exceeds quota, strip dataUrl for local storage
-      try {
-        const lightPhotos = state.photos.map(p => ({ id: p.id, name: p.name, span: p.span, alt: p.alt, size: p.size }));
-        localStorage.setItem(STORAGE_KEY_PHOTOS, JSON.stringify(lightPhotos));
-      } catch (e2) {}
-    }
-
-    // Direct local folder writing if connected
-    if (bitwiseDirHandle) {
-      append('📁 [2/4] Writing directly to local BITWISE folder...');
-      try {
-        // Write js/site-data.js
-        append('  → Updating js/site-data.js...');
-        const jsDir = await bitwiseDirHandle.getDirectoryHandle('js', { create: true });
-        const siteDataHandle = await jsDir.getFileHandle('site-data.js', { create: true });
-        const siteDataWritable = await siteDataHandle.createWritable();
-        const siteDataCode = generateSiteDataJs();
-        await siteDataWritable.write(siteDataCode);
-        await siteDataWritable.close();
-        append('  ✓ js/site-data.js updated');
-
-        // Write any newly uploaded photos with dataUrl to assets/showcase/photography/
-        const assetsDir = await bitwiseDirHandle.getDirectoryHandle('assets', { create: true });
-        const showcaseDir = await assetsDir.getDirectoryHandle('showcase', { create: true });
-        const photoDir = await showcaseDir.getDirectoryHandle('photography', { create: true });
-
-        for (const photo of state.photos) {
-          if (photo.dataUrl && photo.dataUrl.startsWith('data:image/')) {
-            append(`  → Saving image file ${photo.name}...`);
-            const imgHandle = await photoDir.getFileHandle(photo.name, { create: true });
-            const imgWritable = await imgHandle.createWritable();
-            const res = await fetch(photo.dataUrl);
-            const blob = await res.blob();
-            await imgWritable.write(blob);
-            await imgWritable.close();
-            append(`  ✓ Saved ${photo.name}`);
-            delete photo.dataUrl;
-          }
-        }
-
-        // Write manifest.json
-        append('  → Updating assets/showcase/manifest.json...');
-        const manifestHandle = await showcaseDir.getFileHandle('manifest.json', { create: true });
-        const manifestWritable = await manifestHandle.createWritable();
-        const manifest = {
-          photography: state.photos.map(p => p.name),
-          design: state.designs.map(d => d.title),
-          updatedAt: new Date().toISOString()
-        };
-        await manifestWritable.write(JSON.stringify(manifest, null, 2));
-        await manifestWritable.close();
-        append('  ✓ assets/showcase/manifest.json updated');
-
-        append('✨ Local website files updated directly on your disk!');
-      } catch (err) {
-        append('⚠️ Local folder write error: ' + err.message);
+  function setPublishButtonState(isPublishing, label) {
+    const btns = document.querySelectorAll('#btn-top-publish, .btn-publish-action');
+    btns.forEach(btn => {
+      btn.disabled = isPublishing;
+      const span = btn.querySelector('span');
+      if (span) {
+        if (!btn._origText) btn._origText = span.textContent;
+        span.textContent = isPublishing ? (label || 'Publishing...') : btn._origText;
       }
-    } else {
-      append('ℹ️ [2/4] Tip: Click "Select BITWISE Folder" above to auto-write files directly to your drive!');
-    }
-
-    // Broadcast live across BroadcastChannel and to live preview viewport
-    append('📡 [3/4] Broadcasting SYNC_ALL across live bridge...');
-    broadcastToWebsite('SYNC_ALL', {
-      cms: state.cms,
-      photos: state.photos,
-      designs: state.designs,
-      founders: state.founders
     });
-    append('✓ Website DOM live synchronized');
+  }
 
-    // GitHub publishing if token is present
-    const ghToken = localStorage.getItem('bitwise_github_pat');
-    if (ghToken) {
-      append('🐙 [4/4] Publishing to GitHub repository bitwise1216-svg/BITWISE...');
-      try {
-        await publishToGitHubRepo(ghToken, append);
-        append('✓ Deployed to GitHub Pages!');
-      } catch (ghErr) {
-        append('⚠️ GitHub push notice: ' + ghErr.message);
+  function notifyPublishSuccess() {
+    const btns = document.querySelectorAll('#btn-top-publish, .btn-publish-action');
+    btns.forEach(btn => {
+      const span = btn.querySelector('span');
+      if (span) {
+        const orig = btn._origText || 'Publish Changes';
+        span.textContent = '✓ Published!';
+        setTimeout(() => { span.textContent = orig; }, 3500);
       }
-    } else {
-      append('ℹ️ [4/4] GitHub token not configured. (Configure in Settings if you want 1-click push to GitHub Pages)');
-    }
+    });
+    showToast('✓ Published! Website content is live.', 'success');
+  }
 
-    append('🎉 All published changes are live!');
-    showToast('Published updates successfully!', 'success');
+  // 1-CLICK AUTOMATIC PUBLISHING ENGINE
+  window.publishToWebsite = async function () {
+    try {
+      setPublishButtonState(true, 'Packaging...');
+
+      // 1. Capture any active form field values directly into state.cms
+      document.querySelectorAll('[data-cms-field]').forEach(input => {
+        const field = input.getAttribute('data-cms-field');
+        if (field) state.cms[field] = input.value;
+      });
+
+      // 2. Persist state to localStorage with quota protection
+      try {
+        localStorage.setItem(STORAGE_KEY_CMS, JSON.stringify(state.cms));
+        localStorage.setItem(STORAGE_KEY_DESIGNS, JSON.stringify(state.designs));
+      } catch (e) {}
+
+      try {
+        localStorage.setItem(STORAGE_KEY_PHOTOS, JSON.stringify(state.photos));
+      } catch (e) {
+        try {
+          const lightPhotos = state.photos.map(p => ({ id: p.id, name: p.name, span: p.span, alt: p.alt, size: p.size }));
+          localStorage.setItem(STORAGE_KEY_PHOTOS, JSON.stringify(lightPhotos));
+        } catch (e2) {}
+      }
+
+      // 3. Broadcast instant live sync to any open website tab & preview iframe
+      broadcastToWebsite('SYNC_ALL', {
+        cms: state.cms,
+        photos: state.photos,
+        designs: state.designs,
+        founders: state.founders
+      });
+
+      const siteDataCode = generateSiteDataJs();
+      const manifest = {
+        photography: state.photos.map(p => p.name),
+        design: state.designs.map(d => d.title),
+        updatedAt: new Date().toISOString()
+      };
+
+      // 4. Check TARGET A: Local Studio Server (http://localhost:8080 or 127.0.0.1)
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocalhost) {
+        setPublishButtonState(true, 'Syncing Studio...');
+        try {
+          const res = await fetch('/api/publish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              siteDataCode: siteDataCode,
+              photos: state.photos,
+              manifest: manifest
+            })
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) {
+              setPublishButtonState(false);
+              notifyPublishSuccess();
+              return;
+            }
+          }
+        } catch (localErr) {
+          console.warn('Local publish endpoint notice:', localErr);
+        }
+      }
+
+      // 5. Check TARGET B: GitHub Direct API (when deployed online on GitHub Pages)
+      let ghToken = localStorage.getItem('bitwise_github_pat');
+
+      if (!ghToken) {
+        // First-time setup: Prompt user once to enter token for automated 1-click cloud publishing
+        setPublishButtonState(false);
+        openModal('github-setup-modal');
+        const tokenInput = document.getElementById('modal-gh-token-input');
+        if (tokenInput) tokenInput.focus();
+        return;
+      }
+
+      // Execute automated GitHub commit
+      setPublishButtonState(true, 'Publishing to GitHub...');
+      await publishToGitHubDirect(ghToken, siteDataCode, manifest);
+
+      setPublishButtonState(false);
+      notifyPublishSuccess();
+
+    } catch (err) {
+      console.error('Publish error:', err);
+      setPublishButtonState(false);
+      showToast('Publishing note: ' + err.message, 'error');
+    }
   };
 
-  async function publishToGitHubRepo(token, log) {
+  async function publishToGitHubDirect(token, siteDataCode, manifest) {
     const repo = 'bitwise1216-svg/BITWISE';
     const branch = 'main';
 
-    async function commitFile(path, content, message) {
+    async function commitFile(path, content, message, isBase64 = false) {
       const url = `https://api.github.com/repos/${repo}/contents/${path}`;
       let sha = null;
       try {
         const getRes = await fetch(url + `?ref=${branch}`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
         });
         if (getRes.ok) {
           const getJson = await getRes.json();
@@ -2036,8 +2043,8 @@
         }
       } catch (e) {}
 
-      const base64Content = btoa(unescape(encodeURIComponent(content)));
-      const body = { message: message, content: base64Content, branch: branch };
+      const base64Content = isBase64 ? content : btoa(unescape(encodeURIComponent(content)));
+      const body = { message, content: base64Content, branch };
       if (sha) body.sha = sha;
 
       const putRes = await fetch(url, {
@@ -2052,28 +2059,32 @@
 
       if (!putRes.ok) {
         const errJson = await putRes.json().catch(() => ({}));
+        if (putRes.status === 401 || putRes.status === 403) {
+          localStorage.removeItem('bitwise_github_pat');
+          throw new Error('GitHub token unauthorized or expired. Please re-enter your token.');
+        }
         throw new Error(errJson.message || `HTTP ${putRes.status}`);
       }
       return await putRes.json();
     }
 
-    log('  → Committing js/site-data.js to GitHub...');
-    await commitFile('js/site-data.js', generateSiteDataJs(), 'chore(cms): update site content from executive dashboard');
-    log('  ✓ Committed js/site-data.js');
+    // 1. Commit js/site-data.js
+    await commitFile('js/site-data.js', siteDataCode, 'chore(cms): auto-publish website updates from executive dashboard');
 
-    log('  → Committing assets/showcase/manifest.json...');
-    const manifest = {
-      photography: state.photos.map(p => p.name),
-      design: state.designs.map(d => d.title),
-      updatedAt: new Date().toISOString()
-    };
+    // 2. Commit any new uploaded photos directly to assets/showcase/photography/
+    for (const photo of state.photos) {
+      if (photo.dataUrl && photo.dataUrl.startsWith('data:image/')) {
+        const commaIdx = photo.dataUrl.indexOf(',');
+        const rawBase64 = commaIdx >= 0 ? photo.dataUrl.substring(commaIdx + 1) : photo.dataUrl;
+        const imgPath = `assets/showcase/photography/${photo.name}`;
+        await commitFile(imgPath, rawBase64, `feat(showcase): add photography asset ${photo.name}`, true);
+        delete photo.dataUrl;
+      }
+    }
+
+    // 3. Commit manifest.json
     await commitFile('assets/showcase/manifest.json', JSON.stringify(manifest, null, 2), 'chore(showcase): update showcase manifest');
-    log('  ✓ Committed manifest.json');
   }
-
-  window.downloadUpdatedIndex = function () {
-    window.downloadSiteDataJs();
-  };
 
   // ==========================================================================
   // MODALS & TOAST HELPERS
