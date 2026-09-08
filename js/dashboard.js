@@ -66,15 +66,15 @@
     'team-subtitle': 'Three visionary creators crafting the next generation of visual experiences.',
     'founder-1-depth': 'AAQIB',
     'founder-1-name': 'Aaqib Nazran',
-    'founder-1-role': 'Co-Founder Â· Creative Director',
+    'founder-1-role': 'Co-Founder \u2022 Creative Director',
     'founder-1-bio': "Shapes the studio's aesthetic compass, brand worldbuilding, and executive visual storytelling across global productions.",
     'founder-2-depth': 'RUHAIM',
     'founder-2-name': 'Ruhaim Riyaz',
-    'founder-2-role': 'Co-Founder Â· Lead Cinematographer',
+    'founder-2-role': 'Co-Founder \u2022 Lead Cinematographer',
     'founder-2-bio': 'Master of motion, lighting, and camera choreography. Crafts cinematic brand films that balance technical precision with emotion.',
     'founder-3-depth': 'ANEEQ',
     'founder-3-name': 'Aneeq Ahmed',
-    'founder-3-role': 'Co-Founder Â· Head of Production',
+    'founder-3-role': 'Co-Founder \u2022 Head of Production',
     'founder-3-bio': 'Spearheads high-precision production architecture, executive delivery, and cross-media design execution for studio projects.',
 
     // Showcases
@@ -117,7 +117,7 @@
     // Footer
     'footer-tagline': 'YOU THINK. WE MAKE.',
     'footer-desc': 'Creative studio crafting photography, videography, and graphic design for brands and individuals.',
-    'footer-copy': 'Â© 2026 bitwise. All rights reserved.',
+    'footer-copy': '\u00A9 2026 bitwise. All rights reserved.',
 
     // Legal Policies: Privacy Policy (privacy.html)
     'privacy-title': 'Privacy Policy',
@@ -748,6 +748,8 @@
     setupNavigation();
     setupRealtimeBridge();
     setup3DCardTilt();
+    initDesktopNotifications();
+    syncRemoteAnalyticsEvents();
     setupInteractiveBackground();
     setupModals();
 
@@ -2744,3 +2746,378 @@
   }
 })();
 
+
+  // ==========================================================================
+  // EXECUTIVE NOTIFICATIONS & DESKTOP ALERTS CONTROLLER
+  // ==========================================================================
+  function initDesktopNotifications() {
+    updateNotificationPermissionUI();
+
+    // Load persisted notifications
+    try {
+      const saved = localStorage.getItem('bitwise_dashboard_notifications');
+      if (saved) {
+        state.notifications = JSON.parse(saved) || [];
+      }
+    } catch (e) {
+      state.notifications = [];
+    }
+    renderNotificationCenter();
+
+    // Check if permission banner should be shown
+    const isDefault = (typeof Notification !== 'undefined') && Notification.permission === 'default';
+    const isDismissed = sessionStorage.getItem('bitwise_notif_banner_dismissed') === 'true';
+    const banner = document.getElementById('notification-permission-banner');
+    if (banner) {
+      banner.style.display = (isDefault && !isDismissed) ? 'flex' : 'none';
+    }
+
+    // Set sound checkbox state in settings
+    const soundCb = document.getElementById('setting-sound-chime');
+    if (soundCb) {
+      soundCb.checked = state.soundEnabled;
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function (e) {
+      const wrapper = document.getElementById('notification-bell-wrapper');
+      const dropdown = document.getElementById('notification-dropdown');
+      if (wrapper && dropdown && dropdown.style.display !== 'none') {
+        if (!wrapper.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      }
+    });
+  }
+
+  function updateNotificationPermissionUI() {
+    const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+    const dot = document.getElementById('notif-perm-dot');
+    const text = document.getElementById('notif-perm-text');
+    const btnEnable = document.getElementById('btn-perm-enable');
+    const settingsDesc = document.getElementById('settings-notif-desc');
+    const settingsBtn = document.getElementById('btn-settings-request-perm');
+
+    if (perm === 'granted') {
+      if (dot) { dot.className = 'notif-perm-dot granted'; }
+      if (text) { text.textContent = 'Desktop Alerts: Enabled'; }
+      if (btnEnable) { btnEnable.style.display = 'none'; }
+      if (settingsDesc) { settingsDesc.innerHTML = '<span style="color:#10B981; font-weight:600;">\u2713 Active</span> \u2014 Instant system alerts enabled'; }
+      if (settingsBtn) { settingsBtn.disabled = true; settingsBtn.textContent = 'Active'; settingsBtn.style.opacity = '0.6'; }
+    } else if (perm === 'denied') {
+      if (dot) { dot.className = 'notif-perm-dot denied'; }
+      if (text) { text.textContent = 'Desktop Alerts: Blocked'; }
+      if (btnEnable) { btnEnable.style.display = 'none'; }
+      if (settingsDesc) { settingsDesc.innerHTML = '<span style=\"color:#EF4444; font-weight:600;\">Blocked</span> in browser settings. Please allow notifications in site permissions.'; }
+      if (settingsBtn) { settingsBtn.disabled = true; settingsBtn.textContent = 'Blocked in Browser'; }
+    } else {
+      if (dot) { dot.className = 'notif-perm-dot'; }
+      if (text) { text.textContent = 'Desktop Alerts: Default'; }
+      if (btnEnable) { btnEnable.style.display = 'inline-block'; }
+      if (settingsDesc) { settingsDesc.textContent = 'Click Enable Alerts to grant browser notification permission.'; }
+      if (settingsBtn) { settingsBtn.disabled = false; settingsBtn.textContent = 'Enable Alerts'; }
+    }
+  }
+
+  window.requestNotificationPermission = async function () {
+    if (typeof Notification === 'undefined') {
+      showToast('Notifications are not supported in this browser.', 'error');
+      return;
+    }
+
+    try {
+      const result = await Notification.requestPermission();
+      updateNotificationPermissionUI();
+
+      const banner = document.getElementById('notification-permission-banner');
+      if (banner) banner.style.display = 'none';
+
+      if (result === 'granted') {
+        showToast('\u2713 Desktop Notifications Enabled! You will receive live alerts.', 'success');
+        sendDesktopNotification('bitwise. Official Dashboard', {
+          body: 'Desktop notifications are active. You will receive live visitor and inquiry alerts.',
+          tag: 'welcome-notif'
+        });
+      } else if (result === 'denied') {
+        showToast('Notifications blocked. You can re-enable them in browser site settings.', 'info');
+      }
+    } catch (err) {
+      console.warn('Notification permission error:', err);
+    }
+  };
+
+  window.dismissNotificationBanner = function () {
+    const banner = document.getElementById('notification-permission-banner');
+    if (banner) banner.style.display = 'none';
+    sessionStorage.setItem('bitwise_notif_banner_dismissed', 'true');
+  };
+
+  function sendDesktopNotification(title, options) {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+
+    try {
+      const opts = {
+        body: options.body || '',
+        tag: options.tag || ('notif-' + Date.now()),
+        renotify: true,
+        silent: !state.soundEnabled
+      };
+      const notif = new Notification(title, opts);
+      notif.onclick = function () {
+        window.focus();
+        if (options.tab) switchTab(options.tab);
+        notif.close();
+      };
+    } catch (e) {
+      console.warn('Desktop notification dispatch warning:', e);
+    }
+  }
+
+  function playVisitorChime() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1046.50, now); // C6
+      osc.frequency.exponentialRampToValueAtTime(1567.98, now + 0.12); // G6
+
+      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.55);
+    } catch (e) {}
+  }
+
+  function showVisitorToast(data) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-visitor';
+    toast.style.cursor = 'pointer';
+
+    const locationStr = data.location || 'Direct / Private';
+    const deviceStr = (data.device || 'Desktop') + ' \u2022 ' + (data.browser || 'Browser');
+    const pageStr = data.page || '/';
+
+    toast.innerHTML =
+      '<div class=\"toast-visitor-icon\">' +
+        '<span class=\"toast-beacon-core\"></span>' +
+        '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">' +
+          '<path d=\"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\"></path>' +
+          '<circle cx=\"9\" cy=\"7\" r=\"4\"></circle>' +
+          '<path d=\"M23 21v-2a4 4 0 0 0-3-3.87\"></path>' +
+          '<path d=\"M16 3.13a4 4 0 0 1 0 7.75\"></path>' +
+        '</svg>' +
+      '</div>' +
+      '<div style=\"display:flex; flex-direction:column; gap:3px; text-align:left; flex:1;\">' +
+        '<div style=\"display:flex; align-items:center; justify-content:space-between; gap:8px;\">' +
+          '<strong style=\"font-size:13px; font-weight:700; color:#FFFFFF;\">Live Visitor Arrival</strong>' +
+          '<span style=\"font-size:10.5px; padding:2px 6px; border-radius:4px; background:rgba(56,189,248,0.2); color:#38BDF8; font-weight:600;\">NEW</span>' +
+        '</div>' +
+        '<div style=\"font-size:12px; color:#E0E7FF; font-weight:500;\">' + escapeHtml(locationStr) + '</div>' +
+        '<div style=\"font-size:11px; color:#94A3B8;\">' + escapeHtml(deviceStr) + ' &bull; Page: ' + escapeHtml(pageStr) + '</div>' +
+        '<div style=\"margin-top:4px;\">' +
+          '<span style=\"font-size:10.5px; text-decoration:underline; font-weight:600; color:#38BDF8;\">View in Telemetry Stream &rarr;</span>' +
+        '</div>' +
+      '</div>';
+
+    toast.onclick = function () {
+      switchTab('analytics');
+      const table = document.getElementById('tab-analytics');
+      if (table) table.scrollIntoView({ behavior: 'smooth' });
+      toast.remove();
+    };
+
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(50px)';
+      setTimeout(() => toast.remove(), 250);
+    }, 5500);
+  }
+
+  function addNotificationFeedItem(item) {
+    if (!item) return;
+    state.notifications.unshift(item);
+    if (state.notifications.length > 50) state.notifications.length = 50;
+
+    state.unreadNotificationsCount = (state.unreadNotificationsCount || 0) + 1;
+
+    try {
+      localStorage.setItem('bitwise_dashboard_notifications', JSON.stringify(state.notifications));
+    } catch (e) {}
+
+    renderNotificationCenter();
+  }
+
+  function renderNotificationCenter() {
+    const badge = document.getElementById('notification-badge');
+    const pill = document.getElementById('notif-count-pill');
+    const list = document.getElementById('notification-items-list');
+
+    const unread = state.unreadNotificationsCount || 0;
+    if (badge) {
+      if (unread > 0) {
+        badge.textContent = unread > 99 ? '99+' : unread;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    if (pill) {
+      pill.textContent = unread + ' new';
+    }
+
+    if (!list) return;
+
+    if (!state.notifications.length) {
+      list.innerHTML =
+        '<div class=\"notification-empty\" id=\"notification-empty\">' +
+          '<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9\"></path><path d=\"M13.73 21a2 2 0 0 1-3.46 0\"></path></svg>' +
+          '<span>No new notifications</span>' +
+          '<p>Live visitors and client inquiries will stream here in real time.</p>' +
+        '</div>';
+      return;
+    }
+
+    list.innerHTML = state.notifications.map(n => {
+      const isVisit = n.type === 'visit';
+      const icon = isVisit
+        ? '<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle></svg>'
+        : '<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z\"></path><polyline points=\"22,6 12,13 2,6\"></polyline></svg>';
+
+      const timeStr = n.timestamp ? new Date(n.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Just now';
+
+      return (
+        '<div class=\"notification-item\" onclick=\"window.handleNotificationItemClick(\'' + (n.id || '') + '\', \'' + (n.type || '') + '\')\">' +
+          '<div class=\"notif-item-icon ' + (isVisit ? 'visit' : 'inquiry') + '\">' + icon + '</div>' +
+          '<div class=\"notif-item-info\">' +
+            '<div class=\"notif-item-title\">' + escapeHtml(n.title || 'Event') + '</div>' +
+            '<div class=\"notif-item-sub\">' + escapeHtml(n.subtitle || '') + '</div>' +
+            '<div class=\"notif-item-time\">' + escapeHtml(timeStr) + '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  window.handleNotificationItemClick = function (id, type) {
+    const dropdown = document.getElementById('notification-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+
+    if (type === 'visit') {
+      switchTab('analytics');
+    } else if (type === 'inquiry') {
+      switchTab('inquiries');
+      if (typeof window.viewInquiry === 'function') {
+        window.viewInquiry(id);
+      }
+    }
+  };
+
+  window.toggleNotificationCenter = function () {
+    const dropdown = document.getElementById('notification-dropdown');
+    if (!dropdown) return;
+
+    if (dropdown.style.display === 'none' || !dropdown.style.display) {
+      dropdown.style.display = 'flex';
+      // Mark notifications read
+      state.unreadNotificationsCount = 0;
+      const badge = document.getElementById('notification-badge');
+      if (badge) badge.style.display = 'none';
+      const pill = document.getElementById('notif-count-pill');
+      if (pill) pill.textContent = '0 new';
+    } else {
+      dropdown.style.display = 'none';
+    }
+  };
+
+  window.clearAllNotifications = function () {
+    state.notifications = [];
+    state.unreadNotificationsCount = 0;
+    try {
+      localStorage.removeItem('bitwise_dashboard_notifications');
+    } catch (e) {}
+    renderNotificationCenter();
+    showToast('All notifications cleared', 'info');
+  };
+
+  window.testNotificationAlert = function () {
+    const testData = {
+      id: 'test_' + Date.now(),
+      device: 'Desktop',
+      browser: 'Chrome',
+      page: '/portfolio',
+      location: 'New York, United States',
+      timestamp: new Date().toISOString()
+    };
+
+    if (state.soundEnabled) {
+      playVisitorChime();
+    }
+    showVisitorToast(testData);
+
+    sendDesktopNotification('bitwise. Official Dashboard', {
+      body: 'Live Test Alert: New visitor from New York, United States (Chrome on Desktop)',
+      tag: 'test-' + Date.now(),
+      tab: 'analytics'
+    });
+
+    addNotificationFeedItem({
+      id: testData.id,
+      type: 'visit',
+      title: 'Visitor from New York, United States',
+      subtitle: 'Desktop \u2022 Chrome \u2022 /portfolio',
+      timestamp: testData.timestamp,
+      data: testData
+    });
+  };
+
+  window.toggleSoundSetting = function (enabled) {
+    state.soundEnabled = !!enabled;
+    localStorage.setItem('bitwise_sound_enabled', state.soundEnabled ? 'true' : 'false');
+    if (state.soundEnabled) {
+      playVisitorChime();
+      showToast('Notification sound chimes enabled', 'success');
+    } else {
+      showToast('Notification sound chimes muted', 'info');
+    }
+  };
+
+  function syncRemoteAnalyticsEvents() {
+    try {
+      fetch('/api/analytics/events')
+        .then(function (r) { return r.json(); })
+        .then(function (remoteEvents) {
+          if (Array.isArray(remoteEvents) && remoteEvents.length > 0) {
+            let updated = false;
+            remoteEvents.forEach(function (rev) {
+              if (rev && rev.id && !state.analyticsEvents.some(function (ev) { return ev.id === rev.id; })) {
+                state.analyticsEvents.push(rev);
+                updated = true;
+              }
+            });
+            if (updated) {
+              state.analyticsEvents.sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
+              if (state.analyticsEvents.length > 500) state.analyticsEvents.length = 500;
+              localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(state.analyticsEvents));
+              renderAnalytics();
+            }
+          }
+        })
+        .catch(function () {});
+    } catch (e) {}
+  }

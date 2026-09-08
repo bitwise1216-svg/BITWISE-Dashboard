@@ -210,6 +210,56 @@
           <span>Lock Console</span>
         </button>
 
+                <!-- NOTIFICATIONS BELL & NOTIFICATION CENTER -->
+        <div class="notification-bell-wrapper" id="notification-bell-wrapper">
+          <button type="button" class="btn-topbar-notifications" id="btn-topbar-notifications" onclick="window.toggleNotificationCenter()" title="Executive Notifications" aria-label="Notifications">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span class="notification-badge" id="notification-badge" style="display: none;">0</span>
+          </button>
+
+          <!-- NOTIFICATION CENTER DROPDOWN -->
+          <div class="notification-dropdown" id="notification-dropdown" style="display: none;">
+            <div class="notification-dropdown-header">
+              <div class="notif-header-title">
+                <span class="notif-title-text">Notifications</span>
+                <span class="notif-count-pill" id="notif-count-pill">0 new</span>
+              </div>
+              <div class="notif-header-actions">
+                <button type="button" class="btn-notif-action" onclick="window.testNotificationAlert()" title="Send Test Notification">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>Test</span>
+                </button>
+                <button type="button" class="btn-notif-action" onclick="window.clearAllNotifications()" title="Clear all notifications">
+                  <span>Clear</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Permission status bar inside dropdown -->
+            <div class="notif-permission-bar" id="notif-permission-bar">
+              <div class="notif-perm-status">
+                <span class="notif-perm-dot" id="notif-perm-dot"></span>
+                <span class="notif-perm-text" id="notif-perm-text">Desktop Alerts: Default</span>
+              </div>
+              <button type="button" class="btn-perm-enable" id="btn-perm-enable" onclick="window.requestNotificationPermission()">
+                <span>Enable</span>
+              </button>
+            </div>
+
+            <!-- Notification Items List -->
+            <div class="notification-dropdown-body" id="notification-items-list">
+              <div class="notification-empty" id="notification-empty">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                <span>No new notifications</span>
+                <p>Live visitors and client inquiries will stream here in real time.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <a href="https://bitwise1216-svg.github.io/BITWISE/" target="_blank" class="btn btn-secondary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
           <span>Visit Live Site</span>
@@ -223,6 +273,30 @@
 
     <!-- CONTENT AREA -->
     <div class="content-area">
+
+      <!-- FLOATING DESKTOP NOTIFICATION PERMISSION BANNER -->
+      <div class="notification-permission-banner" id="notification-permission-banner" style="display: none;">
+        <div class="notif-banner-content">
+          <div class="notif-banner-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+          </div>
+          <div class="notif-banner-text">
+            <strong>Enable Desktop Notifications for bitwise.</strong>
+            <span>Receive instant system notifications whenever visitors enter bitwise. studio or clients submit inquiries â€” even when this dashboard tab is in the background.</span>
+          </div>
+        </div>
+        <div class="notif-banner-actions">
+          <button type="button" class="btn btn-primary btn-sm" onclick="window.requestNotificationPermission()">
+            <span>Allow Notifications</span>
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.dismissNotificationBanner()">
+            <span>Later</span>
+          </button>
+        </div>
+      </div>
 
       <!-- ====================================================================
            TAB 1: ANALYTICS & VISITORS
@@ -547,6 +621,41 @@
               <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5;">
                 When set, Google Analytics 4 tags are dynamically deployed to your live website without requiring manual code changes. You can view full session tracking and audience geography in your Google Analytics dashboard.
               </p>
+            </div>
+          </div>
+
+                    <!-- DESKTOP & REAL-TIME DASHBOARD NOTIFICATIONS -->
+          <div class="dashboard-card animate-reveal stagger-2">
+            <h3 class="card-title">Desktop &amp; Real-Time Dashboard Notifications</h3>
+            <p class="card-subtitle" style="margin-bottom: 18px;">Get instant system alerts directly on this device when visitors enter bitwise. studio or send inquiries</p>
+
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--bg-hover); border-radius: 8px; border: 1px solid var(--border-subtle); flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <div style="font-size: 13.5px; font-weight: 600; color: var(--text-primary);" id="settings-notif-status-label">Browser Desktop Notifications</div>
+                  <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;" id="settings-notif-desc">Permission: Checking...</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="window.testNotificationAlert()">
+                    <span>Test Notification</span>
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btn-settings-request-perm" onclick="window.requestNotificationPermission()">
+                    <span>Enable Alerts</span>
+                  </button>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 13px; font-weight: 500;">Audio Chimes on Visitor Arrival</div>
+                  <div style="font-size: 11.5px; color: var(--text-muted);">Play a soft executive chime when a visitor enters bitwise. studio</div>
+                </div>
+                <input type="checkbox" id="setting-sound-chime" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: #38BDF8;" onchange="window.toggleSoundSetting(this.checked)">
+              </div>
+
+              <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5; padding: 10px 12px; background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.15); border-radius: 6px;">
+                ðŸ’¡ <strong>Notice:</strong> Automated visitor entry emails to Gmail have been discontinued to keep your inbox clean. All visitor telemetry is delivered in real-time through this executive dashboard and desktop notifications.
+              </div>
             </div>
           </div>
 
