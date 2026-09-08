@@ -152,6 +152,572 @@
   // ==========================================================================
   // INITIALIZATION
   // ==========================================================================
+
+  // ==========================================================================
+  // PASSKEY BIOMETRIC SECURITY GATEKEEPER & WEBAUTHN CONTROLLER
+  // ==========================================================================
+  const FOUNDERS_REGISTRY = {
+    'ruhaim': { name: 'Ruhaim Riyaz', role: 'Lead Cinematographer', email: 'bitwise1216@gmail.com' },
+    'aaqib': { name: 'Aaqib Nazran', role: 'Creative Director', email: 'bitwise1216@gmail.com' },
+    'aneeq': { name: 'Aneeq Ahmed', role: 'Head of Production', email: 'bitwise1216@gmail.com' }
+  };
+
+  const STORAGE_KEY_PASSKEYS = 'bitwise_founder_passkeys';
+  const STORAGE_KEY_SESSION = 'bitwise_founder_session';
+
+  let currentSelectedFounder = 'ruhaim';
+  let isEnrollmentActive = false;
+  let currentScannerMode = 'faceid'; // 'faceid' or 'fingerprint'
+  let verifiedEnrollmentToken = null;
+  let countdownTimer = null;
+
+  // Helpers for WebAuthn ArrayBuffer <-> Base64
+  function bufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  }
+
+  function base64ToBuffer(base64) {
+    let str = base64.replace(/-/g, '+').replace(/_/g, '/');
+    while (str.length % 4) str += '=';
+    const binary = window.atob(str);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
+  function getStoredPasskeys() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_PASSKEYS);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveStoredPasskey(cred) {
+    const list = getStoredPasskeys().filter(p => p.founderId !== cred.founderId);
+    list.push(cred);
+    localStorage.setItem(STORAGE_KEY_PASSKEYS, JSON.stringify(list));
+
+    // Also persist to server backend if reachable
+    fetch('/api/auth/passkeys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cred)
+    }).catch(() => {});
+  }
+
+  function getPasskeyForFounder(founderId) {
+    return getStoredPasskeys().find(p => p.founderId === founderId);
+  }
+
+  function updateFounderCardsUI() {
+    const cards = document.querySelectorAll('.gate-founder-card');
+    cards.forEach(card => {
+      const fId = card.getAttribute('data-founder-id');
+      if (fId === currentSelectedFounder) {
+        card.classList.add('is-selected');
+      } else {
+        card.classList.remove('is-selected');
+      }
+
+      const statusEl = document.getElementById(`status-tag-${fId}`);
+      if (statusEl) {
+        const hasPasskey = !!getPasskeyForFounder(fId);
+        if (hasPasskey) {
+          statusEl.className = 'gate-founder-status status-enrolled';
+          statusEl.textContent = 'Passkey Ready';
+        } else {
+          statusEl.className = 'gate-founder-status';
+          statusEl.textContent = 'Not Enrolled';
+        }
+      }
+    });
+
+    const hasPasskey = !!getPasskeyForFounder(currentSelectedFounder);
+    const authBtn = document.getElementById('btn-authenticate-passkey');
+    const founder = FOUNDERS_REGISTRY[currentSelectedFounder] || { name: 'Founder' };
+
+    if (authBtn) {
+      if (hasPasskey) {
+        authBtn.style.display = 'flex';
+        authBtn.querySelector('span').textContent = `Unlock with Passkey (${founder.name})`;
+      } else {
+        authBtn.style.display = 'none';
+      }
+    }
+
+    // Auto-open enrollment panel if founder has no passkey registered yet
+    if (!hasPasskey && !isEnrollmentActive) {
+      toggleEnrollmentView(true);
+    }
+  }
+
+  function setScannerAnimationState(state, title, subtitle) {
+    const shell = document.getElementById('dynamic-island-shell');
+    const titleEl = document.getElementById('scanner-status-text');
+    const subEl = document.getElementById('scanner-substatus-text');
+
+    if (!shell) return;
+    shell.classList.remove('is-scanning', 'is-success', 'is-error');
+
+    if (state === 'scanning') {
+      shell.classList.add('is-scanning');
+    } else if (state === 'success') {
+      shell.classList.add('is-success');
+    } else if (state === 'error') {
+      shell.classList.add('is-error');
+    }
+
+    if (title && titleEl) titleEl.textContent = title;
+    if (subtitle && subEl) subEl.textContent = subtitle;
+  }
+
+  function showGateAlert(msg, type = 'info') {
+    const el = document.getElementById('gate-msg-alert');
+    if (!el) return;
+    el.className = `gate-msg-alert alert-${type}`;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideGateAlert() {
+    const el = document.getElementById('gate-msg-alert');
+    if (el) el.style.display = 'none';
+  }
+
+  // â”€â”€ Global Window Handlers for Gatekeeper â”€â”€
+  window.selectGateFounder = function (founderId) {
+    if (!FOUNDERS_REGISTRY[founderId]) return;
+    currentSelectedFounder = founderId;
+    verifiedEnrollmentToken = null;
+    hideGateAlert();
+    updateFounderCardsUI();
+
+    const founder = FOUNDERS_REGISTRY[founderId];
+    const hasPasskey = !!getPasskeyForFounder(founderId);
+    if (hasPasskey) {
+      setScannerAnimationState('idle', 'Passkey Ready', `Founder: ${founder.name} (${founder.role})`);
+    } else {
+      setScannerAnimationState('idle', 'Passkey Required', `Founder: ${founder.name} - Please verify email & enroll`);
+    }
+  };
+
+  window.toggleScannerMode = function () {
+    const faceView = document.getElementById('scanner-faceid-view');
+    const fingerView = document.getElementById('scanner-fingerprint-view');
+    const label = document.getElementById('scanner-mode-label');
+
+    if (currentScannerMode === 'faceid') {
+      currentScannerMode = 'fingerprint';
+      if (faceView) faceView.style.display = 'none';
+      if (fingerView) fingerView.style.display = 'flex';
+      if (label) label.textContent = 'Mode: Optical Fingerprint Scanner';
+    } else {
+      currentScannerMode = 'faceid';
+      if (faceView) faceView.style.display = 'flex';
+      if (fingerView) fingerView.style.display = 'none';
+      if (label) label.textContent = 'Mode: Apple Dynamic Island (Face ID)';
+    }
+  };
+
+  window.toggleEnrollmentView = function (forceState) {
+    const panel = document.getElementById('gate-enrollment-panel');
+    const btnText = document.getElementById('btn-toggle-enroll-text');
+    if (!panel) return;
+
+    if (typeof forceState === 'boolean') {
+      isEnrollmentActive = forceState;
+    } else {
+      isEnrollmentActive = !isEnrollmentActive;
+    }
+
+    if (isEnrollmentActive) {
+      panel.classList.add('is-active');
+      if (btnText) btnText.textContent = 'Return to Biometric Unlock';
+      const founder = FOUNDERS_REGISTRY[currentSelectedFounder] || { name: 'Founder' };
+      showGateAlert(`Enrolling passkey for ${founder.name}. Click 'Send Code' to verify email ownership.`, 'info');
+    } else {
+      panel.classList.remove('is-active');
+      if (btnText) btnText.textContent = 'Create / Enroll New Passkey';
+      hideGateAlert();
+    }
+  };
+
+  // â”€â”€ Step 1 of Enrollment: Request Email Verification Code â”€â”€
+  window.requestEmailVerificationCode = async function () {
+    const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
+    if (!founder) return;
+
+    const reqBtn = document.getElementById('btn-request-otp');
+    if (reqBtn) {
+      reqBtn.disabled = true;
+      reqBtn.innerHTML = '<span>Dispatched Verification Code...</span>';
+    }
+
+    showGateAlert(`Generating 6-digit verification code for ${founder.name}...`, 'info');
+
+    let serverSuccess = false;
+    let localCode = null;
+
+    try {
+      // 1. Request OTP from local server endpoint
+      const resp = await fetch('/api/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ founderId: currentSelectedFounder, founderName: founder.name, email: founder.email })
+      });
+      const data = await resp.json();
+      if (data && data.success) {
+        serverSuccess = true;
+        localCode = data.code;
+      }
+    } catch (e) {
+      console.warn('[Passkey Auth] Local server endpoint notice:', e);
+    }
+
+    // 2. Also send automated email to bitwise1216@gmail.com via FormSubmit AJAX bridge
+    try {
+      fetch('https://formsubmit.co/ajax/bitwise1216@gmail.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          _subject: `BITWISE Security: Passkey Verification Code for ${founder.name}`,
+          founder: founder.name,
+          role: founder.role,
+          email: 'bitwise1216@gmail.com',
+          event: 'Executive Dashboard Passkey Registration Code',
+          verificationCode: localCode || Math.floor(100000 + Math.random() * 900000),
+          timestamp: new Date().toISOString()
+        })
+      }).catch(() => {});
+    } catch {}
+
+    showGateAlert(`6-digit code sent to bitwise1216@gmail.com! (Also printed in your studio server console). Enter the code below.`, 'success');
+
+    if (reqBtn) {
+      reqBtn.disabled = false;
+      reqBtn.innerHTML = '<span>Resend Code</span>';
+    }
+
+    // Focus first OTP box
+    const firstBox = document.querySelector('.otp-box[data-index="0"]');
+    if (firstBox) firstBox.focus();
+  };
+
+  // â”€â”€ Step 2 of Enrollment: OTP Input Handling â”€â”€
+  function setupOtpBoxes() {
+    const group = document.getElementById('otp-input-group');
+    if (!group) return;
+
+    const boxes = group.querySelectorAll('.otp-box');
+
+    boxes.forEach((box, idx) => {
+      box.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = val ? val.slice(-1) : '';
+
+        if (e.target.value) {
+          e.target.classList.add('is-filled');
+          if (idx < boxes.length - 1) {
+            boxes[idx + 1].focus();
+          }
+        } else {
+          e.target.classList.remove('is-filled');
+        }
+
+        checkAndAutoVerifyOtp(boxes);
+      });
+
+      box.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+          boxes[idx - 1].focus();
+          boxes[idx - 1].value = '';
+          boxes[idx - 1].classList.remove('is-filled');
+        }
+      });
+
+      box.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
+        if (text.length >= 6) {
+          for (let i = 0; i < 6; i++) {
+            boxes[i].value = text[i];
+            boxes[i].classList.add('is-filled');
+          }
+          boxes[5].focus();
+          checkAndAutoVerifyOtp(boxes);
+        }
+      });
+    });
+  }
+
+  function getEnteredOtp(boxes) {
+    let code = '';
+    boxes.forEach(b => { code += (b.value || ''); });
+    return code;
+  }
+
+  async function checkAndAutoVerifyOtp(boxes) {
+    const code = getEnteredOtp(boxes);
+    const verifyBtn = document.getElementById('btn-verify-otp');
+    if (code.length === 6) {
+      if (verifyBtn) verifyBtn.style.display = 'flex';
+      window.verifyEmailCodeAndProceed();
+    } else {
+      if (verifyBtn) verifyBtn.style.display = 'none';
+    }
+  }
+
+  window.verifyEmailCodeAndProceed = async function () {
+    const boxes = document.querySelectorAll('.otp-box');
+    const code = getEnteredOtp(boxes);
+
+    if (code.length !== 6) {
+      showGateAlert('Please enter all 6 digits of the code.', 'error');
+      return;
+    }
+
+    showGateAlert('Verifying code with secure server...', 'info');
+
+    try {
+      const resp = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ founderId: currentSelectedFounder, code: code })
+      });
+      const data = await resp.json();
+
+      if (data && data.success) {
+        verifiedEnrollmentToken = data.enrollmentToken || 'token-verified';
+        const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
+        showGateAlert(`Identity verified! Ready to register your biometric passkey. Click below to scan Face ID / Fingerprint.`, 'success');
+
+        const verifyBtn = document.getElementById('btn-verify-otp');
+        if (verifyBtn) {
+          verifyBtn.style.display = 'flex';
+          verifyBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zM9 7a3 3 0 0 1 6 0v3H9V7z"/></svg>
+            <span>Scan to Register Biometric Passkey (${founder.name})</span>
+          `;
+          verifyBtn.onclick = () => window.executePasskeyRegistration();
+        }
+      } else {
+        showGateAlert(data.error || 'Invalid or expired verification code. Please check bitwise1216@gmail.com.', 'error');
+        setScannerAnimationState('error', 'Invalid Code', 'Please enter the exact 6-digit code');
+      }
+    } catch (e) {
+      showGateAlert('Error connecting to server. Make sure start-studio server is running.', 'error');
+    }
+  };
+
+  // â”€â”€ Step 3: Register Authentic WebAuthn Biometric Passkey â”€â”€
+  window.executePasskeyRegistration = async function () {
+    const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
+    if (!founder) return;
+
+    if (!window.PublicKeyCredential) {
+      showGateAlert('WebAuthn Passkeys are not supported on this browser. Use Chrome, Edge, Safari, or an updated mobile browser.', 'error');
+      return;
+    }
+
+    setScannerAnimationState('scanning', 'Communicating with Secure Enclave...', 'Follow your device prompt (Face ID / Touch ID / Fingerprint)');
+
+    try {
+      const challengeBytes = new Uint8Array(32);
+      window.crypto.getRandomValues(challengeBytes);
+
+      const userIdBytes = new TextEncoder().encode(currentSelectedFounder);
+
+      const createOptions = {
+        publicKey: {
+          challenge: challengeBytes,
+          rp: {
+            name: 'BITWISE Executive Studio',
+            id: window.location.hostname
+          },
+          user: {
+            id: userIdBytes,
+            name: founder.email,
+            displayName: `${founder.name} (${founder.role})`
+          },
+          pubKeyCredParams: [
+            { type: 'public-key', alg: -7 },   // ES256 (P-256 elliptic curve)
+            { type: 'public-key', alg: -257 }  // RS256
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: 'platform',
+            userVerification: 'required',
+            residentKey: 'preferred'
+          },
+          timeout: 60000,
+          attestation: 'none'
+        }
+      };
+
+      const credential = await navigator.credentials.create(createOptions);
+
+      if (credential) {
+        const credIdBase64 = bufferToBase64(credential.rawId);
+        const passkeyData = {
+          founderId: currentSelectedFounder,
+          founderName: founder.name,
+          role: founder.role,
+          credentialId: credIdBase64,
+          type: credential.type,
+          registeredAt: new Date().toISOString()
+        };
+
+        saveStoredPasskey(passkeyData);
+
+        setScannerAnimationState('success', 'Passkey Created Successfully!', `Enrolled for ${founder.name}`);
+        showGateAlert(`Biometric passkey bound securely to ${founder.name}! Unlocking console...`, 'success');
+
+        setTimeout(() => {
+          unlockDashboardSession(founder);
+        }, 1100);
+      }
+    } catch (err) {
+      console.error('[WebAuthn Enrollment Error]:', err);
+      if (err.name === 'NotAllowedError') {
+        setScannerAnimationState('error', 'Registration Cancelled', 'Biometric prompt was cancelled or timed out');
+        showGateAlert('Biometric registration was cancelled. Click to try again.', 'error');
+      } else {
+        setScannerAnimationState('error', 'Biometric Error', err.message || 'Passkey creation failed');
+        showGateAlert(`Registration notice: ${err.message}. If testing on local network, use localhost or HTTPS.`, 'error');
+      }
+    }
+  };
+
+  // â”€â”€ Returning Founder: Verify Existing Passkey via WebAuthn â”€â”€
+  window.handleBiometricPasskeyAuth = async function () {
+    const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
+    if (!founder) return;
+
+    const passkey = getPasskeyForFounder(currentSelectedFounder);
+    if (!passkey) {
+      showGateAlert(`No passkey registered for ${founder.name}. Please click 'Create / Enroll New Passkey' below.`, 'error');
+      toggleEnrollmentView(true);
+      return;
+    }
+
+    if (!window.PublicKeyCredential) {
+      showGateAlert('WebAuthn Passkeys are not supported on this browser.', 'error');
+      return;
+    }
+
+    setScannerAnimationState('scanning', 'Authenticating Biometrics...', 'Look at camera for Face ID or scan Fingerprint');
+
+    try {
+      const challengeBytes = new Uint8Array(32);
+      window.crypto.getRandomValues(challengeBytes);
+
+      const credIdBuffer = base64ToBuffer(passkey.credentialId);
+
+      const getOptions = {
+        publicKey: {
+          challenge: challengeBytes,
+          allowCredentials: [{
+            id: credIdBuffer,
+            type: 'public-key',
+            transports: ['internal']
+          }],
+          userVerification: 'required',
+          timeout: 60000
+        }
+      };
+
+      const assertion = await navigator.credentials.get(getOptions);
+
+      if (assertion) {
+        setScannerAnimationState('success', 'Biometrics Verified!', `Welcome back, ${founder.name}`);
+        showGateAlert(`Authentication verified! Unlocking Executive Dashboard...`, 'success');
+
+        setTimeout(() => {
+          unlockDashboardSession(founder);
+        }, 900);
+      }
+    } catch (err) {
+      console.error('[WebAuthn Auth Error]:', err);
+      if (err.name === 'NotAllowedError') {
+        setScannerAnimationState('error', 'Authentication Cancelled', 'Biometric prompt cancelled or face/fingerprint not recognized');
+        showGateAlert('Biometrics not recognized or cancelled. Please try again.', 'error');
+      } else {
+        setScannerAnimationState('error', 'Authentication Notice', err.message || 'Scan error');
+        showGateAlert(`Biometric error: ${err.message}.`, 'error');
+      }
+    }
+  };
+
+  function unlockDashboardSession(founder) {
+    const session = {
+      founderId: currentSelectedFounder,
+      founderName: founder.name,
+      role: founder.role,
+      authenticatedAt: new Date().toISOString()
+    };
+
+    sessionStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(session));
+
+    const gate = document.getElementById('passkey-security-gate');
+    if (gate) gate.classList.add('is-unlocked');
+
+    // Update Topbar badge
+    const topbarTag = document.getElementById('topbar-founder-tag');
+    const nameEl = document.getElementById('topbar-founder-name');
+    if (topbarTag) topbarTag.style.display = 'inline-flex';
+    if (nameEl) nameEl.textContent = `${founder.name} (${founder.role})`;
+
+    showToast(`Welcome, ${founder.name}. Executive Command Center Unlocked.`, 'success');
+  }
+
+  window.lockDashboard = function () {
+    sessionStorage.removeItem(STORAGE_KEY_SESSION);
+
+    const gate = document.getElementById('passkey-security-gate');
+    if (gate) gate.classList.remove('is-unlocked');
+
+    const topbarTag = document.getElementById('topbar-founder-tag');
+    if (topbarTag) topbarTag.style.display = 'none';
+
+    setScannerAnimationState('idle', 'Biometric Passkey Required', 'Select founder profile & scan biometrics');
+    updateFounderCardsUI();
+    showToast('Executive Console has been locked.', 'info');
+  };
+
+  function checkExistingSessionOnLoad() {
+    setupOtpBoxes();
+    updateFounderCardsUI();
+
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY_SESSION);
+      if (raw) {
+        const session = JSON.parse(raw);
+        if (session && session.founderId && FOUNDERS_REGISTRY[session.founderId]) {
+          const gate = document.getElementById('passkey-security-gate');
+          if (gate) gate.classList.add('is-unlocked');
+
+          const topbarTag = document.getElementById('topbar-founder-tag');
+          const nameEl = document.getElementById('topbar-founder-name');
+          if (topbarTag) topbarTag.style.display = 'inline-flex';
+          if (nameEl) nameEl.textContent = `${session.founderName} (${session.role})`;
+          return;
+        }
+      }
+    } catch {}
+
+    // Lock screen by default
+    const gate = document.getElementById('passkey-security-gate');
+    if (gate) gate.classList.remove('is-unlocked');
+  }
+
   function init() {
     loadAndCleanState();
     setupNavigation();

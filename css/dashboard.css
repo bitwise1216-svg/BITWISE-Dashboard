@@ -1822,3 +1822,620 @@ html, body {
     justify-content: center;
   }
 }
+
+
+/* ==========================================================================
+   EXECUTIVE BIOMETRIC PASSKEY GATEWAY & DYNAMIC ISLAND SECURITY
+   ========================================================================== */
+
+.passkey-security-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 15%, rgba(22, 27, 34, 0.98), #070709 85%);
+  backdrop-filter: blur(40px) saturate(190%);
+  -webkit-backdrop-filter: blur(40px) saturate(190%);
+  overflow-y: auto;
+  padding: 24px 16px;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s ease;
+}
+
+.passkey-security-gate.is-unlocked {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.gate-card {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  background: rgba(15, 17, 23, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  box-shadow: 0 45px 110px -20px rgba(0, 0, 0, 0.85),
+              0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  padding: 38px 34px 34px;
+  color: #FFFFFF;
+  text-align: center;
+  overflow: hidden;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.gate-ambient-glow {
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, rgba(37, 99, 235, 0.08) 50%, transparent 70%);
+  pointer-events: none;
+  filter: blur(40px);
+}
+
+.gate-brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #A1A1AA;
+  margin-bottom: 20px;
+}
+
+.gate-brand-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38BDF8;
+  box-shadow: 0 0 10px #38BDF8;
+  animation: gatePulse 2s infinite;
+}
+
+@keyframes gatePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+.gate-title {
+  font-family: 'Bebas Neue', 'Inter', sans-serif;
+  font-size: 2.3rem;
+  letter-spacing: 0.05em;
+  line-height: 1.05;
+  color: #FFFFFF;
+  margin: 0 0 8px;
+}
+
+.gate-subtitle {
+  font-size: 13.5px;
+  color: #94A3B8;
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+/* â”€â”€ 3 Founders Selector Grid â”€â”€ */
+.gate-founders-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.gate-founder-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px 8px 12px;
+  cursor: pointer;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+  user-select: none;
+}
+
+.gate-founder-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+
+.gate-founder-card.is-selected {
+  background: rgba(56, 189, 248, 0.09);
+  border-color: #38BDF8;
+  box-shadow: 0 0 20px -3px rgba(56, 189, 248, 0.35);
+  transform: translateY(-2px);
+}
+
+.gate-founder-avatar-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gate-founder-card.is-selected .gate-founder-avatar-wrap {
+  border-color: #38BDF8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+.gate-founder-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.gate-founder-initials {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem;
+  color: #FFFFFF;
+}
+
+.gate-founder-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #F1F5F9;
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gate-founder-role {
+  font-size: 10px;
+  font-weight: 500;
+  color: #94A3B8;
+  line-height: 1.2;
+}
+
+.gate-founder-status {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9.5px;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94A3B8;
+}
+
+.gate-founder-status.status-enrolled {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34D399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* â”€â”€ Dynamic Island Apple Biometric Stage â”€â”€ */
+.dynamic-island-shell {
+  background: #000000;
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: 36px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.dynamic-island-shell.is-scanning {
+  border-color: #38BDF8;
+  box-shadow: 0 0 35px -5px rgba(56, 189, 248, 0.45), 0 0 0 1px rgba(56, 189, 248, 0.2) inset;
+  transform: scale(1.02);
+}
+
+.dynamic-island-shell.is-success {
+  border-color: #10B981;
+  box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.3) inset;
+}
+
+.dynamic-island-shell.is-error {
+  border-color: #EF4444;
+  box-shadow: 0 0 35px -5px rgba(239, 68, 68, 0.4);
+}
+
+.scanner-visual-area {
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 10px;
+}
+
+/* Face ID Optical Animation */
+.faceid-radar {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.faceid-radar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(56, 189, 248, 0.4);
+  animation: radarSpin 8s linear infinite;
+}
+
+.faceid-radar-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #38BDF8;
+}
+
+.faceid-c-tl { top: 0; left: 0; border-right: none; border-bottom: none; border-top-left-radius: 6px; }
+.faceid-c-tr { top: 0; right: 0; border-left: none; border-bottom: none; border-top-right-radius: 6px; }
+.faceid-c-bl { bottom: 0; left: 0; border-right: none; border-top: none; border-bottom-left-radius: 6px; }
+.faceid-c-br { bottom: 0; right: 0; border-left: none; border-top: none; border-bottom-right-radius: 6px; }
+
+.faceid-scanner-beam {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #38BDF8, #60A5FA, transparent);
+  box-shadow: 0 0 12px #38BDF8;
+  top: 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.dynamic-island-shell.is-scanning .faceid-scanner-beam {
+  opacity: 1;
+  animation: scanBeam 1.6s ease-in-out infinite alternate;
+}
+
+.faceid-face-icon {
+  width: 38px;
+  height: 38px;
+  color: #E2E8F0;
+  transition: all 0.3s ease;
+}
+
+.dynamic-island-shell.is-scanning .faceid-face-icon {
+  color: #38BDF8;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.7));
+}
+
+.dynamic-island-shell.is-success .faceid-face-icon {
+  color: #10B981;
+}
+
+/* Fingerprint Optical Animation */
+.fingerprint-radar {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fingerprint-laser-beam {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #10B981, #34D399, transparent);
+  box-shadow: 0 0 12px #10B981;
+  top: 0;
+  opacity: 0;
+}
+
+.dynamic-island-shell.is-scanning .fingerprint-laser-beam {
+  opacity: 1;
+  animation: scanBeam 1.5s ease-in-out infinite alternate;
+}
+
+.fingerprint-icon {
+  width: 44px;
+  height: 44px;
+  color: #94A3B8;
+  transition: all 0.3s;
+}
+
+.dynamic-island-shell.is-scanning .fingerprint-icon {
+  color: #38BDF8;
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.8));
+}
+
+.dynamic-island-shell.is-success .fingerprint-icon {
+  color: #10B981;
+}
+
+@keyframes scanBeam {
+  0% { top: 8%; }
+  100% { top: 90%; }
+}
+
+@keyframes radarSpin {
+  100% { transform: rotate(360deg); }
+}
+
+.scanner-status-line {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #E2E8F0;
+  margin-bottom: 2px;
+}
+
+.scanner-substatus {
+  font-size: 11.5px;
+  color: #64748B;
+}
+
+.scanner-switch-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.scanner-switch-mode:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+
+/* â”€â”€ Primary Action Buttons â”€â”€ */
+.btn-gate-primary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px 22px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 30px -6px rgba(37, 99, 235, 0.55);
+  color: #FFFFFF;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 12px;
+}
+
+.btn-gate-primary:hover {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 36px -6px rgba(37, 99, 235, 0.7);
+}
+
+.btn-gate-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-gate-secondary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94A3B8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-gate-secondary:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* â”€â”€ Enrollment Accordion / View â”€â”€ */
+.gate-enrollment-panel {
+  display: none;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 22px 20px;
+  margin-bottom: 20px;
+  text-align: left;
+  animation: gatePanelSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.gate-enrollment-panel.is-active {
+  display: block;
+}
+
+@keyframes gatePanelSlide {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.enroll-step-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.enroll-step-desc {
+  font-size: 12.5px;
+  color: #94A3B8;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.enroll-email-highlight {
+  color: #38BDF8;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+/* 6-Digit OTP Interactive Container */
+.otp-input-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 16px 0 18px;
+}
+
+.otp-box {
+  width: 44px;
+  height: 52px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: #FFFFFF;
+  font-family: monospace, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.otp-box:focus {
+  border-color: #38BDF8;
+  background: rgba(56, 189, 248, 0.08);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+  transform: scale(1.05);
+}
+
+.otp-box.is-filled {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.gate-msg-alert {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  margin-bottom: 14px;
+  display: none;
+  line-height: 1.4;
+}
+
+.gate-msg-alert.alert-info {
+  display: block;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #BAE6FD;
+}
+
+.gate-msg-alert.alert-success {
+  display: block;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #A7F3D0;
+}
+
+.gate-msg-alert.alert-error {
+  display: block;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #FECACA;
+}
+
+/* Topbar Lock Button & Founder Session Tag */
+.btn-lock-console {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.09);
+  color: #FCA5A5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-lock-console:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #FFFFFF;
+}
+
+.founder-session-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #E0F2FE;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .gate-card {
+    padding: 28px 20px 24px;
+    border-radius: 22px;
+  }
+
+  .gate-title {
+    font-size: 1.9rem;
+  }
+
+  .gate-founders-grid {
+    gap: 6px;
+  }
+
+  .gate-founder-card {
+    padding: 10px 4px 8px;
+  }
+
+  .gate-founder-avatar-wrap {
+    width: 42px;
+    height: 42px;
+  }
+
+  .otp-box {
+    width: 38px;
+    height: 46px;
+    font-size: 18px;
+  }
+}
