@@ -14,5 +14,13 @@
         "type":  "public-key",
         "role":  "Head of Production",
         "founderId":  "aneeq"
+    },
+    {
+        "registeredAt":  "2026-09-08T14:30:00.0000000+05:30",
+        "credentialId":  "cred-aaqib-biometric-key",
+        "founderName":  "Aaqib Nazran",
+        "type":  "public-key",
+        "role":  "Creative Director",
+        "founderId":  "aaqib"
     }
 ]

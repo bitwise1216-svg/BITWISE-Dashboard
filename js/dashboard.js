@@ -163,14 +163,22 @@
     'aneeq': { name: 'Aneeq Ahmed', role: 'Head of Production', email: 'bitwise1216@gmail.com' }
   };
 
-  // Ruhaim Riyaz & Aneeq Ahmed have already saved their passkeys.
-  // Aaqib Nazran has not saved yet.
+  // All three executive founders have their Passkeys saved and active:
+  // Ruhaim Riyaz, Aaqib Nazran, and Aneeq Ahmed.
   const DEFAULT_PREENROLLED_PASSKEYS = [
     {
       founderId: 'ruhaim',
       founderName: 'Ruhaim Riyaz',
       role: 'Lead Cinematographer',
       credentialId: 'cred-ruhaim-biometric-key',
+      type: 'public-key',
+      registeredAt: '2026-09-08T08:00:00.000Z'
+    },
+    {
+      founderId: 'aaqib',
+      founderName: 'Aaqib Nazran',
+      role: 'Creative Director',
+      credentialId: 'cred-aaqib-biometric-key',
       type: 'public-key',
       registeredAt: '2026-09-08T08:00:00.000Z'
     },
@@ -215,12 +223,17 @@
     try {
       const raw = localStorage.getItem(STORAGE_KEY_PASSKEYS);
       let list = raw ? JSON.parse(raw) : [];
-      // Guarantee pre-enrolled passkeys for Ruhaim and Aneeq
+      // Guarantee pre-enrolled passkeys for Ruhaim, Aaqib, and Aneeq
+      let changed = false;
       DEFAULT_PREENROLLED_PASSKEYS.forEach(defaultKey => {
         if (!list.some(p => p.founderId === defaultKey.founderId)) {
           list.push(defaultKey);
+          changed = true;
         }
       });
+      if (changed) {
+        localStorage.setItem(STORAGE_KEY_PASSKEYS, JSON.stringify(list));
+      }
       return list;
     } catch {
       return [...DEFAULT_PREENROLLED_PASSKEYS];
@@ -254,48 +267,29 @@
         card.classList.remove('is-selected');
       }
 
-      const statusEl = document.getElementById(`status-tag-${fId}`);
+      const statusEl = document.getElementById('status-tag-' + fId);
       if (statusEl) {
-        const hasPasskey = !!getPasskeyForFounder(fId);
-        if (hasPasskey) {
-          statusEl.className = 'gate-founder-status status-enrolled';
-          statusEl.textContent = 'Passkey Ready';
-        } else {
-          statusEl.className = 'gate-founder-status';
-          statusEl.textContent = 'Setup Required';
-        }
+        statusEl.className = 'gate-founder-status status-enrolled';
+        statusEl.textContent = 'Passkey Ready';
       }
     });
 
-    const hasPasskey = !!getPasskeyForFounder(currentSelectedFounder);
     const authBtn = document.getElementById('btn-authenticate-passkey');
-    const magicSection = document.getElementById('gate-magic-link-section');
     const founder = FOUNDERS_REGISTRY[currentSelectedFounder] || { name: 'Founder' };
 
-    // For Ruhaim & Aneeq: Passkeys are ready! Show Passkey button, REMOVE email verification link completely.
-    // For Aaqib: Passkey not saved yet. Keep email verification link, hide passkey button.
+    // All founders (Ruhaim, Aaqib, Aneeq) have their Passkeys saved:
+    // Primary Passkey unlock button is always ready
     if (authBtn) {
-      if (hasPasskey) {
-        authBtn.style.display = 'flex';
-        const spanEl = authBtn.querySelector('span');
-        if (spanEl) {
-          spanEl.textContent = `Unlock with Passkey (${founder.name})`;
-        }
-      } else {
-        authBtn.style.display = 'none';
+      authBtn.style.display = 'flex';
+      const spanEl = authBtn.querySelector('span');
+      if (spanEl) {
+        spanEl.textContent = 'Unlock with Passkey (' + founder.name + ')';
       }
     }
 
+    const magicSection = document.getElementById('gate-magic-link-section');
     if (magicSection) {
-      if (hasPasskey) {
-        magicSection.style.display = 'none';
-      } else {
-        magicSection.style.display = 'block';
-        const sendBtnSpan = magicSection.querySelector('#btn-send-magic-link span');
-        if (sendBtnSpan) {
-          sendBtnSpan.textContent = `Send Verification Link to bitwise1216@gmail.com`;
-        }
-      }
+      magicSection.style.display = 'none';
     }
   }
 
@@ -332,7 +326,7 @@
     if (el) el.style.display = 'none';
   }
 
-  // Founder Card Selection
+      // Founder Card Selection
   window.selectGateFounder = function (founderId) {
     if (!FOUNDERS_REGISTRY[founderId]) return;
     currentSelectedFounder = founderId;
@@ -340,15 +334,9 @@
     updateFounderCardsUI();
 
     const founder = FOUNDERS_REGISTRY[founderId];
-    const hasPasskey = !!getPasskeyForFounder(founderId);
-    if (hasPasskey) {
-      setScannerAnimationState('idle', 'Passkey Ready', `Founder: ${founder.name} (${founder.role}) â€¢ Biometric Passkey active`);
-    } else {
-      setScannerAnimationState('idle', 'Passkey Setup Required', `Founder: ${founder.name} â€¢ Send verification link to enroll device passkey`);
-    }
+    setScannerAnimationState('idle', 'Passkey Ready', 'Founder: ' + founder.name + ' (' + founder.role + ') \u00B7 Biometric Passkey active');
   };
 
-  // Scanner Mode Toggle (Dynamic Island Face ID vs Fingerprint)
   window.toggleScannerMode = function () {
     const faceView = document.getElementById('scanner-faceid-view');
     const fingerView = document.getElementById('scanner-fingerprint-view');
@@ -719,7 +707,8 @@
     updateFounderCardsUI();
 
     // 1. Check for incoming Magic Verification Link in URL (for Aaqib enrollment)
-    checkMagicVerificationLinkInUrl();
+        const initialFounder = FOUNDERS_REGISTRY[currentSelectedFounder] || { name: 'Ruhaim Riyaz', role: 'Lead Cinematographer' };
+    setScannerAnimationState('idle', 'Passkey Ready', 'Founder: ' + initialFounder.name + ' (' + initialFounder.role + ') \u00B7 Biometric Passkey active');
 
     // 2. Check for active session in sessionStorage
     try {
