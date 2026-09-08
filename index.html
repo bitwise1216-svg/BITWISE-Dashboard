@@ -86,8 +86,8 @@
         </div>
       </div>
 
-      <div class="scanner-status-line" id="scanner-status-text">Biometric Passkey Required</div>
-      <div class="scanner-substatus" id="scanner-substatus-text">Scan with Face ID, Touch ID, or Windows Hello</div>
+      <div class="scanner-status-line" id="scanner-status-text">Biometric Passkey Terminal</div>
+      <div class="scanner-substatus" id="scanner-substatus-text">Compatible with iPhone (Face ID), Android (Fingerprint), &amp; Windows Hello</div>
 
       <button type="button" class="scanner-switch-mode" id="btn-switch-sensor" onclick="window.toggleScannerMode()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4M7 4L3 8M7 4L11 8M17 8v12M17 20l4-4M17 20l-4-4"/></svg>
@@ -95,7 +95,7 @@
       </button>
     </div>
 
-    <!-- 3. Primary Passkey Verification Button -->
+    <!-- 3. Primary Passkey Verification Button (When Passkey Enrolled) -->
     <button type="button" class="btn-gate-primary" id="btn-authenticate-passkey" onclick="window.handleBiometricPasskeyAuth()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zM9 7a3 3 0 0 1 6 0v3H9V7z"/>
@@ -103,50 +103,27 @@
       <span>Verify Passkey &amp; Unlock</span>
     </button>
 
-    <!-- 4. New Passkey Enrollment Accordion / Panel -->
-    <div class="gate-enrollment-panel" id="gate-enrollment-panel">
-      <div class="enroll-step-title">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        <span>Email Verification Code</span>
-      </div>
-      <p class="enroll-step-desc">
-        To create a new passkey, an authorization code must be sent to the studio email <span class="enroll-email-highlight">bitwise1216@gmail.com</span>.
-      </p>
-
-      <button type="button" class="btn-gate-secondary" id="btn-request-otp" onclick="window.requestEmailVerificationCode()" style="margin-bottom: 14px; background: rgba(56, 189, 248, 0.12); color: #7DD3FC; border-color: rgba(56, 189, 248, 0.3);">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-        <span>Send Code to bitwise1216@gmail.com</span>
+    <!-- 4. Email Verification Link Dispatch Container -->
+    <div id="gate-magic-link-section" style="margin-bottom: 14px;">
+      <button type="button" class="btn-gate-primary" id="btn-send-magic-link" onclick="window.sendVerificationLinkEmail()" style="background: linear-gradient(135deg, #0284C7 0%, #2563EB 100%);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <span>Send Verification Link to bitwise1216@gmail.com</span>
       </button>
 
-      <!-- 6-digit OTP Inputs -->
-      <div style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; text-align: center; margin-bottom: 6px;">
-        Enter 6-Digit Code
-      </div>
-      <div class="otp-input-group" id="otp-input-group">
-        <input type="text" maxlength="1" class="otp-box" data-index="0" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code">
-        <input type="text" maxlength="1" class="otp-box" data-index="1" inputmode="numeric" pattern="[0-9]*">
-        <input type="text" maxlength="1" class="otp-box" data-index="2" inputmode="numeric" pattern="[0-9]*">
-        <input type="text" maxlength="1" class="otp-box" data-index="3" inputmode="numeric" pattern="[0-9]*">
-        <input type="text" maxlength="1" class="otp-box" data-index="4" inputmode="numeric" pattern="[0-9]*">
-        <input type="text" maxlength="1" class="otp-box" data-index="5" inputmode="numeric" pattern="[0-9]*">
-      </div>
-
-      <button type="button" class="btn-gate-primary" id="btn-verify-otp" onclick="window.verifyEmailCodeAndProceed()" style="background: linear-gradient(135deg, #059669, #10B981); display: none;">
+      <a id="btn-direct-magic-link" href="#" style="display: none; margin-top: 10px; background: linear-gradient(135deg, #10B981, #059669); text-decoration: none;" class="btn-gate-primary">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        <span>Confirm Code &amp; Scan New Passkey</span>
-      </button>
+        <span>Click to Open Magic Link &amp; Scan Passkey</span>
+      </a>
     </div>
 
-    <!-- Toggle between Unlock & Create New Passkey -->
-    <button type="button" class="btn-gate-secondary" id="btn-toggle-enroll" onclick="window.toggleEnrollmentView()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-      <span id="btn-toggle-enroll-text">Create / Enroll New Passkey</span>
+    <!-- 5. Initial / Demo Access Button (So user is never locked out before registering) -->
+    <button type="button" class="btn-gate-secondary" id="btn-setup-access" onclick="window.enterSetupAccess()" style="margin-top: 4px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      <span>Instant Access (Setup Mode)</span>
     </button>
   </div>
 </div>
-
-
-<!-- Ambient Moving Architectural Grid, Floating Ambient Orbs & Particle Canvas -->
+`n<!-- Ambient Moving Architectural Grid, Floating Ambient Orbs & Particle Canvas -->
 <canvas id="ambient-canvas"></canvas>
 <div class="ambient-grid"></div>
 <div class="ambient-glow-sphere sphere-top"></div>

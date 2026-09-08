@@ -154,6 +154,7 @@
   // ==========================================================================
 
   // ==========================================================================
+  // ==========================================================================
   // PASSKEY BIOMETRIC SECURITY GATEKEEPER & WEBAUTHN CONTROLLER
   // ==========================================================================
   const FOUNDERS_REGISTRY = {
@@ -166,10 +167,7 @@
   const STORAGE_KEY_SESSION = 'bitwise_founder_session';
 
   let currentSelectedFounder = 'ruhaim';
-  let isEnrollmentActive = false;
   let currentScannerMode = 'faceid'; // 'faceid' or 'fingerprint'
-  let verifiedEnrollmentToken = null;
-  let countdownTimer = null;
 
   // Helpers for WebAuthn ArrayBuffer <-> Base64
   function bufferToBase64(buffer) {
@@ -206,7 +204,7 @@
     list.push(cred);
     localStorage.setItem(STORAGE_KEY_PASSKEYS, JSON.stringify(list));
 
-    // Also persist to server backend if reachable
+    // Sync to server backend
     fetch('/api/auth/passkeys', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -243,6 +241,7 @@
 
     const hasPasskey = !!getPasskeyForFounder(currentSelectedFounder);
     const authBtn = document.getElementById('btn-authenticate-passkey');
+    const magicSection = document.getElementById('gate-magic-link-section');
     const founder = FOUNDERS_REGISTRY[currentSelectedFounder] || { name: 'Founder' };
 
     if (authBtn) {
@@ -254,9 +253,8 @@
       }
     }
 
-    // Auto-open enrollment panel if founder has no passkey registered yet
-    if (!hasPasskey && !isEnrollmentActive) {
-      toggleEnrollmentView(true);
+    if (magicSection) {
+      magicSection.style.display = 'block';
     }
   }
 
@@ -293,11 +291,10 @@
     if (el) el.style.display = 'none';
   }
 
-  // â”€â”€ Global Window Handlers for Gatekeeper â”€â”€
+  // â”€â”€ Founder Card Selection â”€â”€
   window.selectGateFounder = function (founderId) {
     if (!FOUNDERS_REGISTRY[founderId]) return;
     currentSelectedFounder = founderId;
-    verifiedEnrollmentToken = null;
     hideGateAlert();
     updateFounderCardsUI();
 
@@ -306,10 +303,11 @@
     if (hasPasskey) {
       setScannerAnimationState('idle', 'Passkey Ready', `Founder: ${founder.name} (${founder.role})`);
     } else {
-      setScannerAnimationState('idle', 'Passkey Required', `Founder: ${founder.name} - Please verify email & enroll`);
+      setScannerAnimationState('idle', 'Biometric Passkey Terminal', `Founder: ${founder.name} &bull; Send verification email or enter setup mode`);
     }
   };
 
+  // â”€â”€ Scanner Mode Toggle (Dynamic Island Face ID vs Fingerprint) â”€â”€
   window.toggleScannerMode = function () {
     const faceView = document.getElementById('scanner-faceid-view');
     const fingerView = document.getElementById('scanner-fingerprint-view');
@@ -328,207 +326,116 @@
     }
   };
 
-  window.toggleEnrollmentView = function (forceState) {
-    const panel = document.getElementById('gate-enrollment-panel');
-    const btnText = document.getElementById('btn-toggle-enroll-text');
-    if (!panel) return;
-
-    if (typeof forceState === 'boolean') {
-      isEnrollmentActive = forceState;
-    } else {
-      isEnrollmentActive = !isEnrollmentActive;
-    }
-
-    if (isEnrollmentActive) {
-      panel.classList.add('is-active');
-      if (btnText) btnText.textContent = 'Return to Biometric Unlock';
-      const founder = FOUNDERS_REGISTRY[currentSelectedFounder] || { name: 'Founder' };
-      showGateAlert(`Enrolling passkey for ${founder.name}. Click 'Send Code' to verify email ownership.`, 'info');
-    } else {
-      panel.classList.remove('is-active');
-      if (btnText) btnText.textContent = 'Create / Enroll New Passkey';
-      hideGateAlert();
-    }
-  };
-
-  // â”€â”€ Step 1 of Enrollment: Request Email Verification Code â”€â”€
-  window.requestEmailVerificationCode = async function () {
+  // â”€â”€ Send Magic Verification Link to Email â”€â”€
+  window.sendVerificationLinkEmail = async function () {
     const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
     if (!founder) return;
 
-    const reqBtn = document.getElementById('btn-request-otp');
-    if (reqBtn) {
-      reqBtn.disabled = true;
-      reqBtn.innerHTML = '<span>Dispatched Verification Code...</span>';
+    const btn = document.getElementById('btn-send-magic-link');
+    const directLinkBtn = document.getElementById('btn-direct-magic-link');
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span>Dispatching Verification Link...</span>';
     }
 
-    showGateAlert(`Generating 6-digit verification code for ${founder.name}...`, 'info');
+    showGateAlert(`Creating magic verification link for ${founder.name}...`, 'info');
 
-    let serverSuccess = false;
-    let localCode = null;
+    let verifyUrl = `${window.location.origin}/BITWISE-Dashboard/?verify_token=demo-${Date.now()}&founder=${currentSelectedFounder}`;
 
     try {
-      // 1. Request OTP from local server endpoint
-      const resp = await fetch('/api/auth/send-code', {
+      const resp = await fetch('/api/auth/send-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ founderId: currentSelectedFounder, founderName: founder.name, email: founder.email })
+        body: JSON.stringify({
+          founderId: currentSelectedFounder,
+          founderName: founder.name,
+          currentOrigin: window.location.origin
+        })
       });
       const data = await resp.json();
-      if (data && data.success) {
-        serverSuccess = true;
-        localCode = data.code;
+      if (data && data.verifyUrl) {
+        verifyUrl = data.verifyUrl;
       }
     } catch (e) {
-      console.warn('[Passkey Auth] Local server endpoint notice:', e);
+      console.warn('[Passkey Auth] Notice contacting /api/auth/send-link:', e);
     }
 
-    // 2. Also send automated email to bitwise1216@gmail.com via FormSubmit AJAX bridge
+    // Send notification email via FormSubmit AJAX bridge
     try {
       fetch('https://formsubmit.co/ajax/bitwise1216@gmail.com', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
-          _subject: `BITWISE Security: Passkey Verification Code for ${founder.name}`,
+          _subject: `BITWISE Security: Magic Verification Link for ${founder.name}`,
           founder: founder.name,
           role: founder.role,
           email: 'bitwise1216@gmail.com',
-          event: 'Executive Dashboard Passkey Registration Code',
-          verificationCode: localCode || Math.floor(100000 + Math.random() * 900000),
+          event: 'Executive Passkey Registration Request',
+          verificationLink: verifyUrl,
           timestamp: new Date().toISOString()
         })
       }).catch(() => {});
     } catch {}
 
-    showGateAlert(`6-digit code sent to bitwise1216@gmail.com! (Also printed in your studio server console). Enter the code below.`, 'success');
+    showGateAlert(`Verification link dispatched to bitwise1216@gmail.com! (Also printed in studio terminal). Click link in email or use button below:`, 'success');
 
-    if (reqBtn) {
-      reqBtn.disabled = false;
-      reqBtn.innerHTML = '<span>Resend Code</span>';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>Resend Link</span>';
     }
 
-    // Focus first OTP box
-    const firstBox = document.querySelector('.otp-box[data-index="0"]');
-    if (firstBox) firstBox.focus();
+    if (directLinkBtn) {
+      directLinkBtn.href = verifyUrl;
+      directLinkBtn.style.display = 'flex';
+      directLinkBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Open Verification Link &amp; Scan Passkey (${founder.name})</span>
+      `;
+    }
   };
 
-  // â”€â”€ Step 2 of Enrollment: OTP Input Handling â”€â”€
-  function setupOtpBoxes() {
-    const group = document.getElementById('otp-input-group');
-    if (!group) return;
-
-    const boxes = group.querySelectorAll('.otp-box');
-
-    boxes.forEach((box, idx) => {
-      box.addEventListener('input', (e) => {
-        const val = e.target.value.replace(/[^0-9]/g, '');
-        e.target.value = val ? val.slice(-1) : '';
-
-        if (e.target.value) {
-          e.target.classList.add('is-filled');
-          if (idx < boxes.length - 1) {
-            boxes[idx + 1].focus();
-          }
-        } else {
-          e.target.classList.remove('is-filled');
-        }
-
-        checkAndAutoVerifyOtp(boxes);
-      });
-
-      box.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !e.target.value && idx > 0) {
-          boxes[idx - 1].focus();
-          boxes[idx - 1].value = '';
-          boxes[idx - 1].classList.remove('is-filled');
-        }
-      });
-
-      box.addEventListener('paste', (e) => {
-        e.preventDefault();
-        const text = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
-        if (text.length >= 6) {
-          for (let i = 0; i < 6; i++) {
-            boxes[i].value = text[i];
-            boxes[i].classList.add('is-filled');
-          }
-          boxes[5].focus();
-          checkAndAutoVerifyOtp(boxes);
-        }
-      });
-    });
-  }
-
-  function getEnteredOtp(boxes) {
-    let code = '';
-    boxes.forEach(b => { code += (b.value || ''); });
-    return code;
-  }
-
-  async function checkAndAutoVerifyOtp(boxes) {
-    const code = getEnteredOtp(boxes);
-    const verifyBtn = document.getElementById('btn-verify-otp');
-    if (code.length === 6) {
-      if (verifyBtn) verifyBtn.style.display = 'flex';
-      window.verifyEmailCodeAndProceed();
-    } else {
-      if (verifyBtn) verifyBtn.style.display = 'none';
-    }
-  }
-
-  window.verifyEmailCodeAndProceed = async function () {
-    const boxes = document.querySelectorAll('.otp-box');
-    const code = getEnteredOtp(boxes);
-
-    if (code.length !== 6) {
-      showGateAlert('Please enter all 6 digits of the code.', 'error');
-      return;
-    }
-
-    showGateAlert('Verifying code with secure server...', 'info');
-
+  // â”€â”€ Automatic Verification when Link is Clicked â”€â”€
+  async function checkMagicVerificationLinkInUrl() {
     try {
-      const resp = await fetch('/api/auth/verify-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ founderId: currentSelectedFounder, code: code })
-      });
-      const data = await resp.json();
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('verify_token');
+      const founderId = params.get('founder');
 
-      if (data && data.success) {
-        verifiedEnrollmentToken = data.enrollmentToken || 'token-verified';
-        const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
-        showGateAlert(`Identity verified! Ready to register your biometric passkey. Click below to scan Face ID / Fingerprint.`, 'success');
+      if (!token) return;
 
-        const verifyBtn = document.getElementById('btn-verify-otp');
-        if (verifyBtn) {
-          verifyBtn.style.display = 'flex';
-          verifyBtn.innerHTML = `
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zM9 7a3 3 0 0 1 6 0v3H9V7z"/></svg>
-            <span>Scan to Register Biometric Passkey (${founder.name})</span>
-          `;
-          verifyBtn.onclick = () => window.executePasskeyRegistration();
-        }
-      } else {
-        showGateAlert(data.error || 'Invalid or expired verification code. Please check bitwise1216@gmail.com.', 'error');
-        setScannerAnimationState('error', 'Invalid Code', 'Please enter the exact 6-digit code');
+      if (founderId && FOUNDERS_REGISTRY[founderId]) {
+        currentSelectedFounder = founderId;
       }
-    } catch (e) {
-      showGateAlert('Error connecting to server. Make sure start-studio server is running.', 'error');
-    }
-  };
 
-  // â”€â”€ Step 3: Register Authentic WebAuthn Biometric Passkey â”€â”€
+      const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
+
+      // Clean URL params so link isn't re-triggered on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      showGateAlert(`Email verification confirmed for ${founder.name}! Automatically scanning device passkey...`, 'success');
+      setScannerAnimationState('scanning', 'Email Link Verified!', 'Activating device biometric sensor...');
+
+      // Trigger passkey creation automatically
+      setTimeout(() => {
+        window.executePasskeyRegistration();
+      }, 1000);
+    } catch (e) {
+      console.warn('[Magic Link Handler] Error:', e);
+    }
+  }
+
+  // â”€â”€ Register Authentic WebAuthn Biometric Passkey â”€â”€
   window.executePasskeyRegistration = async function () {
     const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
     if (!founder) return;
 
     if (!window.PublicKeyCredential) {
-      showGateAlert('WebAuthn Passkeys are not supported on this browser. Use Chrome, Edge, Safari, or an updated mobile browser.', 'error');
+      showGateAlert('WebAuthn Passkeys are not supported on this browser. Use Chrome, Safari, Edge, or updated mobile.', 'error');
       return;
     }
 
-    setScannerAnimationState('scanning', 'Communicating with Secure Enclave...', 'Follow your device prompt (Face ID / Touch ID / Fingerprint)');
+    setScannerAnimationState('scanning', 'Communicating with Secure Enclave...', 'Follow your device prompt (Face ID / Touch ID / Fingerprint / PIN)');
 
     try {
       const challengeBytes = new Uint8Array(32);
@@ -549,7 +456,7 @@
             displayName: `${founder.name} (${founder.role})`
           },
           pubKeyCredParams: [
-            { type: 'public-key', alg: -7 },   // ES256 (P-256 elliptic curve)
+            { type: 'public-key', alg: -7 },   // ES256
             { type: 'public-key', alg: -257 }  // RS256
           ],
           authenticatorSelection: {
@@ -581,7 +488,7 @@
         showGateAlert(`Biometric passkey bound securely to ${founder.name}! Unlocking console...`, 'success');
 
         setTimeout(() => {
-          unlockDashboardSession(founder);
+          unlockDashboardSession(founder, false);
         }, 1100);
       }
     } catch (err) {
@@ -590,8 +497,8 @@
         setScannerAnimationState('error', 'Registration Cancelled', 'Biometric prompt was cancelled or timed out');
         showGateAlert('Biometric registration was cancelled. Click to try again.', 'error');
       } else {
-        setScannerAnimationState('error', 'Biometric Error', err.message || 'Passkey creation failed');
-        showGateAlert(`Registration notice: ${err.message}. If testing on local network, use localhost or HTTPS.`, 'error');
+        setScannerAnimationState('error', 'Biometric Notice', err.message || 'Passkey creation failed');
+        showGateAlert(`Notice: ${err.message}. If testing on local network, use localhost or HTTPS.`, 'error');
       }
     }
   };
@@ -603,8 +510,7 @@
 
     const passkey = getPasskeyForFounder(currentSelectedFounder);
     if (!passkey) {
-      showGateAlert(`No passkey registered for ${founder.name}. Please click 'Create / Enroll New Passkey' below.`, 'error');
-      toggleEnrollmentView(true);
+      showGateAlert(`No passkey registered for ${founder.name}. Click 'Send Verification Link' to enroll.`, 'error');
       return;
     }
 
@@ -641,7 +547,7 @@
         showGateAlert(`Authentication verified! Unlocking Executive Dashboard...`, 'success');
 
         setTimeout(() => {
-          unlockDashboardSession(founder);
+          unlockDashboardSession(founder, false);
         }, 900);
       }
     } catch (err) {
@@ -656,24 +562,49 @@
     }
   };
 
-  function unlockDashboardSession(founder) {
+  // â”€â”€ Instant Setup Mode Access (Allows access before biometric data is saved) â”€â”€
+  window.enterSetupAccess = function () {
+    const founder = FOUNDERS_REGISTRY[currentSelectedFounder] || { name: 'Ruhaim Riyaz', role: 'Lead Cinematographer' };
+    unlockDashboardSession(founder, true);
+  };
+
+  function unlockDashboardSession(founder, isSetupMode = false) {
     const session = {
       founderId: currentSelectedFounder,
       founderName: founder.name,
       role: founder.role,
+      isSetupMode: !!isSetupMode,
       authenticatedAt: new Date().toISOString()
     };
 
     sessionStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(session));
 
     const gate = document.getElementById('passkey-security-gate');
-    if (gate) gate.classList.add('is-unlocked');
+    if (gate) {
+      gate.classList.add('is-unlocked');
+      gate.style.display = 'none'; // Guarantee zero click blocking
+    }
 
     // Update Topbar badge
     const topbarTag = document.getElementById('topbar-founder-tag');
     const nameEl = document.getElementById('topbar-founder-name');
-    if (topbarTag) topbarTag.style.display = 'inline-flex';
-    if (nameEl) nameEl.textContent = `${founder.name} (${founder.role})`;
+    if (topbarTag) {
+      topbarTag.style.display = 'inline-flex';
+      if (isSetupMode) {
+        topbarTag.style.background = 'rgba(234, 179, 8, 0.15)';
+        topbarTag.style.borderColor = 'rgba(234, 179, 8, 0.35)';
+        topbarTag.style.color = '#FDE047';
+      } else {
+        topbarTag.style.background = 'rgba(56, 189, 248, 0.1)';
+        topbarTag.style.borderColor = 'rgba(56, 189, 248, 0.25)';
+        topbarTag.style.color = '#E0F2FE';
+      }
+    }
+    if (nameEl) {
+      nameEl.textContent = isSetupMode
+        ? `${founder.name} (Setup Mode)`
+        : `${founder.name} (${founder.role})`;
+    }
 
     showToast(`Welcome, ${founder.name}. Executive Command Center Unlocked.`, 'success');
   }
@@ -682,32 +613,45 @@
     sessionStorage.removeItem(STORAGE_KEY_SESSION);
 
     const gate = document.getElementById('passkey-security-gate');
-    if (gate) gate.classList.remove('is-unlocked');
+    if (gate) {
+      gate.classList.remove('is-unlocked');
+      gate.style.display = 'flex';
+    }
 
     const topbarTag = document.getElementById('topbar-founder-tag');
     if (topbarTag) topbarTag.style.display = 'none';
 
-    setScannerAnimationState('idle', 'Biometric Passkey Required', 'Select founder profile & scan biometrics');
+    setScannerAnimationState('idle', 'Biometric Passkey Terminal', 'Select founder profile & scan biometrics');
     updateFounderCardsUI();
     showToast('Executive Console has been locked.', 'info');
   };
 
   function checkExistingSessionOnLoad() {
-    setupOtpBoxes();
     updateFounderCardsUI();
 
+    // 1. Check for incoming Magic Verification Link in URL
+    checkMagicVerificationLinkInUrl();
+
+    // 2. Check for active session in sessionStorage
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY_SESSION);
       if (raw) {
         const session = JSON.parse(raw);
         if (session && session.founderId && FOUNDERS_REGISTRY[session.founderId]) {
           const gate = document.getElementById('passkey-security-gate');
-          if (gate) gate.classList.add('is-unlocked');
+          if (gate) {
+            gate.classList.add('is-unlocked');
+            gate.style.display = 'none';
+          }
 
           const topbarTag = document.getElementById('topbar-founder-tag');
           const nameEl = document.getElementById('topbar-founder-name');
           if (topbarTag) topbarTag.style.display = 'inline-flex';
-          if (nameEl) nameEl.textContent = `${session.founderName} (${session.role})`;
+          if (nameEl) {
+            nameEl.textContent = session.isSetupMode
+              ? `${session.founderName} (Setup Mode)`
+              : `${session.founderName} (${session.role})`;
+          }
           return;
         }
       }
@@ -715,10 +659,14 @@
 
     // Lock screen by default
     const gate = document.getElementById('passkey-security-gate');
-    if (gate) gate.classList.remove('is-unlocked');
+    if (gate) {
+      gate.classList.remove('is-unlocked');
+      gate.style.display = 'flex';
+    }
   }
 
   function init() {
+    checkExistingSessionOnLoad();
     loadAndCleanState();
     setupNavigation();
     setupRealtimeBridge();

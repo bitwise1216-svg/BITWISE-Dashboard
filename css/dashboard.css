@@ -1846,6 +1846,7 @@ html, body {
 }
 
 .passkey-security-gate.is-unlocked {
+  display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
