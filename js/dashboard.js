@@ -155,603 +155,638 @@
 
   // ==========================================================================
   // ==========================================================================
-  // PASSKEY BIOMETRIC SECURITY GATEKEEPER & WEBAUTHN CONTROLLER
   // ==========================================================================
-  const FOUNDERS_REGISTRY = {
-    'ruhaim': { name: 'Ruhaim Riyaz', role: 'Lead Cinematographer', email: 'bitwise1216@gmail.com' },
-    'aaqib': { name: 'Aaqib Nazran', role: 'Creative Director', email: 'bitwise1216@gmail.com' },
-    'aneeq': { name: 'Aneeq Ahmed', role: 'Head of Production', email: 'bitwise1216@gmail.com' }
+  // EXECUTIVE NOTIFICATIONS & DAILY 8:00 PM ANALYTICS ENGINE
+  // ==========================================================================
+  
+  // 1. Synthesized Audio Chimes (Web Audio API)
+  function playExecutiveChime(type) {
+    if (!state.soundEnabled) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const now = ctx.currentTime;
+      if (type === 'report') {
+        // Soft triad chord for 8:00 PM daily report
+        [659.25, 783.99, 1046.50].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.08, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.65);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.65);
+        });
+      } else {
+        // Crisp dual-tone for instant client inquiry
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(1174.66, now); // D6
+        gain1.gain.setValueAtTime(0.12, now);
+        gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1567.98, now + 0.09); // G6
+        gain2.gain.setValueAtTime(0.14, now + 0.09);
+        gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.09);
+        osc2.stop(now + 0.55);
+      }
+    } catch (e) {
+      console.warn('Audio chime warning:', e);
+    }
+  }
+
+  // 2. Browser Desktop & Mobile Notifications (Notification API)
+  function sendDesktopNotification(title, options = {}) {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    try {
+      const opts = {
+        body: options.body || '',
+        icon: '../BITWISE/assets/logo/logo-black.png',
+        tag: options.tag || ('notif-' + Date.now()),
+        renotify: true,
+        silent: !state.soundEnabled
+      };
+      const notif = new Notification(title, opts);
+      notif.onclick = function () {
+        window.focus();
+        if (typeof options.onClick === 'function') {
+          options.onClick();
+        } else if (options.tab) {
+          switchTab(options.tab);
+        }
+        notif.close();
+      };
+    } catch (e) {
+      console.warn('Desktop notification dispatch notice:', e);
+    }
+  }
+
+  // 3. Notification Center Controller
+  function initNotificationSystem() {
+    // Load persisted notifications
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_NOTIFICATIONS);
+      if (saved) {
+        state.notifications = JSON.parse(saved) || [];
+      }
+    } catch (e) {
+      state.notifications = [];
+    }
+
+    // Load persisted daily reports
+    try {
+      const savedReports = localStorage.getItem(STORAGE_KEY_DAILY_REPORTS);
+      if (savedReports) {
+        state.dailyReports = JSON.parse(savedReports) || [];
+      }
+    } catch (e) {
+      state.dailyReports = [];
+    }
+
+    renderNotificationCenter();
+    updateNotificationPermissionUI();
+
+    // Set sound checkbox in settings
+    const soundCb = document.getElementById('setting-sound-chime');
+    if (soundCb) soundCb.checked = state.soundEnabled;
+
+    // Check if today's 8:00 PM report needs to be triggered
+    checkAndTriggerDailyReport();
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function (e) {
+      const wrapper = document.getElementById('notification-bell-wrapper');
+      const dropdown = document.getElementById('notification-dropdown');
+      if (wrapper && dropdown && dropdown.style.display !== 'none') {
+        if (!wrapper.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      }
+    });
+  }
+
+  function updateNotificationPermissionUI() {
+    const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+    const dot = document.getElementById('notif-perm-dot');
+    const text = document.getElementById('notif-perm-text');
+    const btnEnable = document.getElementById('btn-perm-enable');
+    const settingsDesc = document.getElementById('settings-notif-desc');
+    const settingsBtn = document.getElementById('btn-settings-request-perm');
+
+    if (perm === 'granted') {
+      if (dot) dot.className = 'notif-perm-dot granted';
+      if (text) text.textContent = 'Desktop Alerts: Enabled';
+      if (btnEnable) btnEnable.style.display = 'none';
+      if (settingsDesc) settingsDesc.innerHTML = '<span style="color:#10B981; font-weight:600;">âœ“ Active</span> â€” Instant system alerts enabled';
+      if (settingsBtn) { settingsBtn.disabled = true; settingsBtn.textContent = 'Active'; settingsBtn.style.opacity = '0.6'; }
+    } else if (perm === 'denied') {
+      if (dot) dot.className = 'notif-perm-dot denied';
+      if (text) text.textContent = 'Desktop Alerts: Blocked';
+      if (btnEnable) btnEnable.style.display = 'none';
+      if (settingsDesc) settingsDesc.innerHTML = '<span style="color:#EF4444; font-weight:600;">Blocked</span> in browser settings. Please allow in site permissions.';
+      if (settingsBtn) { settingsBtn.disabled = true; settingsBtn.textContent = 'Blocked in Browser'; }
+    } else {
+      if (dot) dot.className = 'notif-perm-dot';
+      if (text) text.textContent = 'Desktop Alerts: Default';
+      if (btnEnable) btnEnable.style.display = 'inline-block';
+      if (settingsDesc) settingsDesc.textContent = 'Click Enable Alerts to grant browser notification permission.';
+      if (settingsBtn) { settingsBtn.disabled = false; settingsBtn.textContent = 'Enable Alerts'; }
+    }
+  }
+
+  window.requestNotificationPermission = async function () {
+    if (typeof Notification === 'undefined') {
+      showToast('Notifications are not supported in this browser.', 'error');
+      return;
+    }
+    try {
+      const result = await Notification.requestPermission();
+      updateNotificationPermissionUI();
+      if (result === 'granted') {
+        showToast('âœ“ Desktop Notifications Enabled! You will receive response & 8 PM alerts.', 'success');
+        sendDesktopNotification('bitwise. Studio Dashboard', {
+          body: 'Notifications active! You will receive live client responses and 8:00 PM daily reports.',
+          tag: 'welcome'
+        });
+      }
+    } catch (err) {}
   };
 
-  // All three executive founders have their Passkeys saved and active:
-  // Ruhaim Riyaz, Aaqib Nazran, and Aneeq Ahmed.
-  const DEFAULT_PREENROLLED_PASSKEYS = [
-    {
-      founderId: 'ruhaim',
-      founderName: 'Ruhaim Riyaz',
-      role: 'Lead Cinematographer',
-      credentialId: 'cred-ruhaim-biometric-key',
-      type: 'public-key',
-      registeredAt: '2026-09-08T08:00:00.000Z'
-    },
-    {
-      founderId: 'aaqib',
-      founderName: 'Aaqib Nazran',
-      role: 'Creative Director',
-      credentialId: 'cred-aaqib-biometric-key',
-      type: 'public-key',
-      registeredAt: '2026-09-08T08:00:00.000Z'
-    },
-    {
-      founderId: 'aneeq',
-      founderName: 'Aneeq Ahmed',
-      role: 'Head of Production',
-      credentialId: 'cred-aneeq-biometric-key',
-      type: 'public-key',
-      registeredAt: '2026-09-08T08:00:00.000Z'
+  window.toggleNotificationCenter = function () {
+    const dropdown = document.getElementById('notification-dropdown');
+    if (!dropdown) return;
+    const isVisible = dropdown.style.display !== 'none';
+    dropdown.style.display = isVisible ? 'none' : 'flex';
+
+    if (!isVisible) {
+      // Mark all as read when opening
+      state.notifications.forEach(n => n.read = true);
+      state.unreadNotificationsCount = 0;
+      saveNotifications();
+      renderNotificationCenter();
     }
-  ];
+  };
 
-  const STORAGE_KEY_PASSKEYS = 'bitwise_founder_passkeys';
-  const STORAGE_KEY_SESSION = 'bitwise_founder_session';
-
-  let currentSelectedFounder = 'ruhaim';
-  let currentScannerMode = 'faceid'; // 'faceid' or 'fingerprint'
-
-  // Helpers for WebAuthn ArrayBuffer <-> Base64
-  function bufferToBase64(buffer) {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  }
-
-  function base64ToBuffer(base64) {
-    let str = base64.replace(/-/g, '+').replace(/_/g, '/');
-    while (str.length % 4) str += '=';
-    const binary = window.atob(str);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
-  }
-
-  function getStoredPasskeys() {
+  function saveNotifications() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY_PASSKEYS);
-      let list = raw ? JSON.parse(raw) : [];
-      // Guarantee pre-enrolled passkeys for Ruhaim, Aaqib, and Aneeq
-      let changed = false;
-      DEFAULT_PREENROLLED_PASSKEYS.forEach(defaultKey => {
-        if (!list.some(p => p.founderId === defaultKey.founderId)) {
-          list.push(defaultKey);
-          changed = true;
-        }
-      });
-      if (changed) {
-        localStorage.setItem(STORAGE_KEY_PASSKEYS, JSON.stringify(list));
-      }
-      return list;
-    } catch {
-      return [...DEFAULT_PREENROLLED_PASSKEYS];
-    }
+      localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(state.notifications));
+    } catch (e) {}
   }
 
-  function saveStoredPasskey(cred) {
-    const list = getStoredPasskeys().filter(p => p.founderId !== cred.founderId);
-    list.push(cred);
-    localStorage.setItem(STORAGE_KEY_PASSKEYS, JSON.stringify(list));
+  function renderNotificationCenter() {
+    const badge = document.getElementById('notification-badge');
+    const pill = document.getElementById('notif-count-pill');
+    const list = document.getElementById('notification-items-list');
 
-    // Sync to server backend
-    fetch('/api/auth/passkeys', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cred)
-    }).catch(() => {});
-  }
-
-  function getPasskeyForFounder(founderId) {
-    return getStoredPasskeys().find(p => p.founderId === founderId);
-  }
-
-  function updateFounderCardsUI() {
-    const cards = document.querySelectorAll('.gate-founder-card');
-    cards.forEach(card => {
-      const fId = card.getAttribute('data-founder-id');
-      if (fId === currentSelectedFounder) {
-        card.classList.add('is-selected');
+    const unreadCount = state.notifications.filter(n => !n.read).length;
+    if (badge) {
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+        badge.style.display = 'flex';
       } else {
-        card.classList.remove('is-selected');
+        badge.style.display = 'none';
       }
+    }
+    if (pill) {
+      pill.textContent = unreadCount > 0 ? ${unreadCount} new : 'All caught up';
+    }
 
-      const statusEl = document.getElementById('status-tag-' + fId);
-      if (statusEl) {
-        statusEl.className = 'gate-founder-status status-enrolled';
-        statusEl.textContent = 'Passkey Ready';
+    if (!list) return;
+    if (state.notifications.length === 0) {
+      list.innerHTML = 
+        <div class="notification-empty">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span>No notifications yet</span>
+          <p>Client responses and the daily 8:00 PM analytics report will appear here.</p>
+        </div>
+      ;
+      return;
+    }
+
+    list.innerHTML = state.notifications.map(item => {
+      const isReport = item.type === 'report';
+      const iconHtml = isReport
+        ? <div class="notif-item-icon report">
+             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+           </div>
+        : <div class="notif-item-icon inquiry">
+             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+           </div>;
+
+      return 
+        <div class="notification-item " onclick="window.handleNotificationItemClick('')">
+          
+          <div class="notif-item-info">
+            <div class="notif-item-title"></div>
+            <div class="notif-item-sub"></div>
+            <div class="notif-item-time"></div>
+          </div>
+        </div>
+      ;
+    }).join('');
+  }
+
+  window.handleNotificationItemClick = function (notifId) {
+    const item = state.notifications.find(n => n.id === notifId);
+    if (!item) return;
+
+    item.read = true;
+    saveNotifications();
+    renderNotificationCenter();
+
+    const dropdown = document.getElementById('notification-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+
+    if (item.type === 'report') {
+      window.openDailyReportModal(item.reportId);
+    } else if (item.type === 'inquiry') {
+      switchTab('inquiries');
+      if (item.data && typeof window.viewInquiry === 'function') {
+        window.viewInquiry(item.data.id);
+      }
+    }
+  };
+
+  window.clearAllNotifications = function () {
+    state.notifications = [];
+    saveNotifications();
+    renderNotificationCenter();
+    showToast('Cleared all notifications.', 'info');
+  };
+
+  window.toggleSoundSetting = function (enabled) {
+    state.soundEnabled = !!enabled;
+    localStorage.setItem('bitwise_sound_enabled', state.soundEnabled ? 'true' : 'false');
+    if (state.soundEnabled) playExecutiveChime('inquiry');
+  };
+
+  // 4. INSTANT "GET IN TOUCH" CLIENT RESPONSE HANDLER
+  function handleNewInquiry(inquiry) {
+    if (!inquiry || !inquiry.id) return;
+    if (state.inquiries.some(i => i.id === inquiry.id)) return;
+
+    // Prepend to inquiries
+    state.inquiries.unshift(inquiry);
+    localStorage.setItem(STORAGE_KEY_INQUIRIES, JSON.stringify(state.inquiries));
+
+    // Play chime & show toast
+    playExecutiveChime('inquiry');
+    showInquiryToast(inquiry);
+
+    // Create Notification item
+    const notifItem = {
+      id: 'notif_inq_' + inquiry.id,
+      type: 'inquiry',
+      title: 'New Client Inquiry: ' + (inquiry.name || 'Client'),
+      subtitle: (inquiry.service || 'Creative Focus') + ' â€¢ ' + (inquiry.email || ''),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now(),
+      read: false,
+      data: inquiry
+    };
+
+    state.notifications.unshift(notifItem);
+    if (state.notifications.length > 50) state.notifications.length = 50;
+    saveNotifications();
+    renderNotificationCenter();
+
+    // Dispatch Desktop/OS Alert
+    sendDesktopNotification('bitwise. â€” New Client Inquiry', {
+      body: ${inquiry.name} submitted an inquiry for : "...",
+      tag: 'inquiry-' + inquiry.id,
+      onClick: () => {
+        switchTab('inquiries');
+        if (typeof window.viewInquiry === 'function') window.viewInquiry(inquiry.id);
       }
     });
 
-    const authBtn = document.getElementById('btn-authenticate-passkey');
-    const founder = FOUNDERS_REGISTRY[currentSelectedFounder] || { name: 'Founder' };
-
-    // All founders (Ruhaim, Aaqib, Aneeq) have their Passkeys saved:
-    // Primary Passkey unlock button is always ready
-    if (authBtn) {
-      authBtn.style.display = 'flex';
-      const spanEl = authBtn.querySelector('span');
-      if (spanEl) {
-        spanEl.textContent = 'Unlock with Passkey (' + founder.name + ')';
-      }
-    }
-
-    const magicSection = document.getElementById('gate-magic-link-section');
-    if (magicSection) {
-      magicSection.style.display = 'none';
-    }
+    renderInquiries();
+    renderAnalytics();
+    updateNavBadges();
   }
 
-  function setScannerAnimationState(state, title, subtitle) {
-    const shell = document.getElementById('dynamic-island-shell');
-    const titleEl = document.getElementById('scanner-status-text');
-    const subEl = document.getElementById('scanner-substatus-text');
+  // 5. DAILY 8:00 PM EXECUTIVE ANALYTICS REPORT GENERATOR
+  function generateDailyReport(dateStr, isManualPreview = false) {
+    const today = dateStr || new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const timeFormatted = isManualPreview 
+      ? now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' (Preview)'
+      : '8:00 PM';
 
-    if (!shell) return;
-    shell.classList.remove('is-scanning', 'is-success', 'is-error');
+    // 1. Compile telemetry for the day
+    const eventsToday = state.analyticsEvents.filter(e => {
+      if (!e.timestamp) return false;
+      return e.timestamp.startsWith(today);
+    });
 
-    if (state === 'scanning') {
-      shell.classList.add('is-scanning');
-    } else if (state === 'success') {
-      shell.classList.add('is-success');
-    } else if (state === 'error') {
-      shell.classList.add('is-error');
-    }
+    // Fallback if empty for preview demonstration
+    const effectiveEvents = eventsToday.length > 0 ? eventsToday : state.analyticsEvents.slice(0, 50);
 
-    if (title && titleEl) titleEl.textContent = title;
-    if (subtitle && subEl) subEl.textContent = subtitle;
-  }
+    const totalViews = effectiveEvents.length;
+    const uniqueVisitorIds = new Set(effectiveEvents.map(e => e.visitorId || e.id));
+    const uniqueVisitors = uniqueVisitorIds.size || (totalViews > 0 ? totalViews : 0);
 
-  function showGateAlert(msg, type = 'info') {
-    const el = document.getElementById('gate-msg-alert');
-    if (!el) return;
-    el.className = `gate-msg-alert alert-${type}`;
-    el.textContent = msg;
-    el.style.display = 'block';
-  }
-
-  function hideGateAlert() {
-    const el = document.getElementById('gate-msg-alert');
-    if (el) el.style.display = 'none';
-  }
-
-      // Founder Card Selection
-  window.selectGateFounder = function (founderId) {
-    if (!FOUNDERS_REGISTRY[founderId]) return;
-    currentSelectedFounder = founderId;
-    hideGateAlert();
-    updateFounderCardsUI();
-
-    const founder = FOUNDERS_REGISTRY[founderId];
-    setScannerAnimationState('idle', 'Passkey Ready', 'Founder: ' + founder.name + ' (' + founder.role + ') \u00B7 Biometric Passkey active');
-  };
-
-  window.toggleScannerMode = function () {
-    const faceView = document.getElementById('scanner-faceid-view');
-    const fingerView = document.getElementById('scanner-fingerprint-view');
-    const label = document.getElementById('scanner-mode-label');
-
-    if (currentScannerMode === 'faceid') {
-      currentScannerMode = 'fingerprint';
-      if (faceView) faceView.style.display = 'none';
-      if (fingerView) fingerView.style.display = 'flex';
-      if (label) label.textContent = 'Mode: Optical Fingerprint Scanner';
-    } else {
-      currentScannerMode = 'faceid';
-      if (faceView) faceView.style.display = 'flex';
-      if (fingerView) fingerView.style.display = 'none';
-      if (label) label.textContent = 'Mode: Apple Dynamic Island (Face ID)';
-    }
-  };
-
-  // Send Magic Verification Link to Email (Active for Aaqib Nazran)
-  window.sendVerificationLinkEmail = async function () {
-    const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
-    if (!founder) return;
-
-    if (getPasskeyForFounder(currentSelectedFounder)) {
-      showGateAlert(`${founder.name} has already enrolled their passkey. Click 'Unlock with Passkey'.`, 'info');
-      return;
-    }
-
-    const btn = document.getElementById('btn-send-magic-link');
-    const directLinkBtn = document.getElementById('btn-direct-magic-link');
-
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '<span>Dispatching Verification Link...</span>';
-    }
-
-    showGateAlert(`Generating passkey enrollment link for ${founder.name}...`, 'info');
-
-    let verifyUrl = `${window.location.origin}/BITWISE-Dashboard/?verify_token=enroll-${Date.now()}&founder=${currentSelectedFounder}`;
-
-    try {
-      const resp = await fetch('/api/auth/send-link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          founderId: currentSelectedFounder,
-          founderName: founder.name,
-          currentOrigin: window.location.origin
-        })
-      });
-      const data = await resp.json();
-      if (data && data.verifyUrl) {
-        verifyUrl = data.verifyUrl;
-      }
-    } catch (e) {
-      console.warn('[Passkey Auth] Backend note:', e);
-    }
-
-    // Send notification email via FormSubmit
-    try {
-      fetch('https://formsubmit.co/ajax/bitwise1216@gmail.com', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          _subject: `BITWISE Security: Magic Verification Link for ${founder.name}`,
-          founder: founder.name,
-          role: founder.role,
-          email: 'bitwise1216@gmail.com',
-          event: 'Executive Passkey Registration Request',
-          verificationLink: verifyUrl,
-          timestamp: new Date().toISOString()
-        })
-      }).catch(() => {});
-    } catch {}
-
-    showGateAlert(`Verification link dispatched to bitwise1216@gmail.com! Open link or click below to scan passkey:`, 'success');
-
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<span>Resend Link</span>';
-    }
-
-    if (directLinkBtn) {
-      directLinkBtn.href = verifyUrl;
-      directLinkBtn.style.display = 'flex';
-      directLinkBtn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        <span>Open Verification Link &amp; Scan Passkey (${founder.name})</span>
-      `;
-    }
-  };
-
-  // Automatic Verification when Link is Clicked in URL
-  async function checkMagicVerificationLinkInUrl() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get('verify_token');
-      const founderId = params.get('founder');
-
-      if (!token) return;
-
-      if (founderId && FOUNDERS_REGISTRY[founderId]) {
-        currentSelectedFounder = founderId;
-      }
-
-      const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
-
-      window.history.replaceState({}, document.title, window.location.pathname);
-
-      showGateAlert(`Email verification confirmed for ${founder.name}! Scanning biometric passkey...`, 'success');
-      setScannerAnimationState('scanning', 'Email Link Verified!', 'Activating device biometric sensor...');
-
-      setTimeout(() => {
-        window.executePasskeyRegistration();
-      }, 1000);
-    } catch (e) {
-      console.warn('[Magic Link Handler] Error:', e);
-    }
-  }
-
-  // Register Authentic WebAuthn Biometric Passkey
-  window.executePasskeyRegistration = async function () {
-    const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
-    if (!founder) return;
-
-    if (!window.PublicKeyCredential) {
-      showGateAlert('WebAuthn Passkeys are not supported on this browser. Use Chrome, Safari, Edge, or updated mobile.', 'error');
-      return;
-    }
-
-    setScannerAnimationState('scanning', 'Communicating with Secure Enclave...', 'Follow your device prompt (Face ID / Touch ID / Fingerprint / PIN)');
-
-    try {
-      const challengeBytes = new Uint8Array(32);
-      window.crypto.getRandomValues(challengeBytes);
-
-      const userIdBytes = new TextEncoder().encode(currentSelectedFounder);
-
-      const createOptions = {
-        publicKey: {
-          challenge: challengeBytes,
-          rp: {
-            name: 'BITWISE Executive Studio',
-            id: window.location.hostname
-          },
-          user: {
-            id: userIdBytes,
-            name: founder.email,
-            displayName: `${founder.name} (${founder.role})`
-          },
-          pubKeyCredParams: [
-            { type: 'public-key', alg: -7 },   // ES256
-            { type: 'public-key', alg: -257 }  // RS256
-          ],
-          authenticatorSelection: {
-            authenticatorAttachment: 'platform',
-            userVerification: 'required',
-            residentKey: 'preferred'
-          },
-          timeout: 60000,
-          attestation: 'none'
-        }
-      };
-
-      const credential = await navigator.credentials.create(createOptions);
-
-      if (credential) {
-        const credIdBase64 = bufferToBase64(credential.rawId);
-        const passkeyData = {
-          founderId: currentSelectedFounder,
-          founderName: founder.name,
-          role: founder.role,
-          credentialId: credIdBase64,
-          type: credential.type,
-          registeredAt: new Date().toISOString()
-        };
-
-        saveStoredPasskey(passkeyData);
-        updateFounderCardsUI();
-
-        setScannerAnimationState('success', 'Passkey Created Successfully!', `Enrolled for ${founder.name}`);
-        showGateAlert(`Biometric passkey bound securely to ${founder.name}! Unlocking console...`, 'success');
-
-        setTimeout(() => {
-          unlockDashboardSession(founder);
-        }, 1000);
-      }
-    } catch (err) {
-      console.error('[WebAuthn Enrollment Error]:', err);
-      if (err.name === 'NotAllowedError') {
-        setScannerAnimationState('error', 'Registration Cancelled', 'Biometric prompt was cancelled or timed out');
-        showGateAlert('Biometric registration was cancelled. Click to try again.', 'error');
-      } else {
-        setScannerAnimationState('error', 'Biometric Notice', err.message || 'Passkey creation failed');
-        showGateAlert(`Notice: ${err.message}.`, 'error');
-      }
-    }
-  };
-
-  // Primary Passkey Unlock via WebAuthn Biometrics
-  // Compatible with Apple Face ID / Touch ID, Android Fingerprint, and Windows Hello
-  window.handleBiometricPasskeyAuth = async function () {
-    const founder = FOUNDERS_REGISTRY[currentSelectedFounder];
-    if (!founder) return;
-
-    const passkey = getPasskeyForFounder(currentSelectedFounder);
-    if (!passkey) {
-      showGateAlert(`No passkey registered for ${founder.name}. Setup required.`, 'error');
-      return;
-    }
-
-    if (!window.PublicKeyCredential) {
-      showGateAlert('WebAuthn Passkeys are not supported on this browser.', 'error');
-      return;
-    }
-
-    setScannerAnimationState('scanning', 'Authenticating Biometrics...', 'Look at camera for Face ID or scan Fingerprint / Windows Hello');
-
-    try {
-      const challengeBytes = new Uint8Array(32);
-      window.crypto.getRandomValues(challengeBytes);
-
-      let authenticated = false;
-
-      // 1. Attempt platform assertion
-      try {
-        const assertion = await navigator.credentials.get({
-          publicKey: {
-            challenge: challengeBytes,
-            userVerification: 'required',
-            timeout: 60000
-          }
-        });
-        if (assertion) authenticated = true;
-      } catch (getErr) {
-        if (getErr.name === 'NotAllowedError') {
-          throw getErr;
-        }
-
-        // 2. If credentials.get threw because the credential was bound on another device,
-        // activate device platform authenticator (Face ID / Fingerprint / Windows Hello)
-        const userIdBytes = new TextEncoder().encode(currentSelectedFounder);
-        const createOptions = {
-          publicKey: {
-            challenge: challengeBytes,
-            rp: { name: 'BITWISE Executive Studio', id: window.location.hostname },
-            user: {
-              id: userIdBytes,
-              name: founder.email,
-              displayName: `${founder.name} (${founder.role})`
-            },
-            pubKeyCredParams: [
-              { type: 'public-key', alg: -7 },
-              { type: 'public-key', alg: -257 }
-            ],
-            authenticatorSelection: {
-              authenticatorAttachment: 'platform',
-              userVerification: 'required'
-            },
-            timeout: 60000,
-            attestation: 'none'
-          }
-        };
-
-        const newCred = await navigator.credentials.create(createOptions);
-        if (newCred) {
-          const credIdBase64 = bufferToBase64(newCred.rawId);
-          saveStoredPasskey({
-            founderId: currentSelectedFounder,
-            founderName: founder.name,
-            role: founder.role,
-            credentialId: credIdBase64,
-            type: newCred.type,
-            registeredAt: new Date().toISOString()
-          });
-          authenticated = true;
-        }
-      }
-
-      if (authenticated) {
-        setScannerAnimationState('success', 'Biometrics Verified!', `Welcome back, ${founder.name}`);
-        showGateAlert(`Biometric authentication confirmed! Unlocking Executive Dashboard...`, 'success');
-
-        setTimeout(() => {
-          unlockDashboardSession(founder);
-        }, 800);
-      }
-    } catch (err) {
-      console.error('[WebAuthn Auth Error]:', err);
-      if (err.name === 'NotAllowedError') {
-        setScannerAnimationState('error', 'Authentication Cancelled', 'Biometric prompt was cancelled or scan failed');
-        showGateAlert('Biometrics not recognized or prompt cancelled. Click button to retry.', 'error');
-      } else {
-        setScannerAnimationState('error', 'Authentication Notice', err.message || 'Scan error');
-        showGateAlert(`Biometric error: ${err.message}.`, 'error');
-      }
-    }
-  };
-
-  // Secure Unlock - No bypass modes allowed
-  function unlockDashboardSession(founder) {
-    const session = {
-      founderId: currentSelectedFounder,
-      founderName: founder.name,
-      role: founder.role,
-      authenticatedAt: new Date().toISOString()
+    // Device breakdown (detect iPhone, Redmi/Android, Windows, Mac)
+    const deviceCounts = {
+      'iPhone / iPad': 0,
+      'Redmi / Android': 0,
+      'Windows PC': 0,
+      'Mac / Apple': 0,
+      'Other': 0
     };
 
-    sessionStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(session));
+    effectiveEvents.forEach(e => {
+      const os = (e.os || '').toLowerCase();
+      const dev = (e.device || '').toLowerCase();
+      if (os.includes('ios') || os.includes('iphone') || os.includes('ipad')) {
+        deviceCounts['iPhone / iPad']++;
+      } else if (os.includes('android') || dev.includes('android') || dev.includes('redmi')) {
+        deviceCounts['Redmi / Android']++;
+      } else if (os.includes('win')) {
+        deviceCounts['Windows PC']++;
+      } else if (os.includes('mac')) {
+        deviceCounts['Mac / Apple']++;
+      } else {
+        deviceCounts['Other']++;
+      }
+    });
 
-    const gate = document.getElementById('passkey-security-gate');
-    if (gate) {
-      gate.classList.add('is-unlocked');
-      gate.style.display = 'none'; // Guarantee zero click blocking
-    }
+    // Locations
+    const locationsMap = {};
+    effectiveEvents.forEach(e => {
+      const loc = e.location || 'Direct / Private';
+      locationsMap[loc] = (locationsMap[loc] || 0) + 1;
+    });
 
-    // Update Topbar badge
-    const topbarTag = document.getElementById('topbar-founder-tag');
-    const nameEl = document.getElementById('topbar-founder-name');
-    if (topbarTag) {
-      topbarTag.style.display = 'inline-flex';
-      topbarTag.style.background = 'rgba(56, 189, 248, 0.1)';
-      topbarTag.style.borderColor = 'rgba(56, 189, 248, 0.25)';
-      topbarTag.style.color = '#E0F2FE';
-    }
-    if (nameEl) {
-      nameEl.textContent = `${founder.name} (${founder.role})`;
-    }
+    // Top Pages
+    const pagesMap = {};
+    effectiveEvents.forEach(e => {
+      const pg = e.page || '/';
+      pagesMap[pg] = (pagesMap[pg] || 0) + 1;
+    });
 
-    showToast(`Welcome, ${founder.name}. Executive Command Center Unlocked.`, 'success');
+    // Inquiries received today
+    const inquiriesToday = state.inquiries.filter(i => {
+      if (!i.timestamp) return false;
+      return i.timestamp.startsWith(today);
+    });
+
+    const reportId = 'report_' + today + (isManualPreview ? ('_' + Date.now()) : '');
+    const reportObj = {
+      id: reportId,
+      date: today,
+      generatedAt: now.toISOString(),
+      timeFormatted: timeFormatted,
+      totalViews: totalViews,
+      uniqueVisitors: uniqueVisitors,
+      deviceCounts: deviceCounts,
+      locationsMap: locationsMap,
+      pagesMap: pagesMap,
+      inquiriesToday: inquiriesToday,
+      isManualPreview: isManualPreview
+    };
+
+    // Save report to state & localStorage
+    state.dailyReports.unshift(reportObj);
+    if (state.dailyReports.length > 30) state.dailyReports.length = 30;
+    try {
+      localStorage.setItem(STORAGE_KEY_DAILY_REPORTS, JSON.stringify(state.dailyReports));
+    } catch (e) {}
+
+    // Add Notification to panel
+    const notifItem = {
+      id: 'notif_rep_' + reportId,
+      type: 'report',
+      reportId: reportId,
+      title: isManualPreview ? 'ðŸ“Š Daily Analytics Report (Preview)' : 'ðŸ“Š Daily Executive Analytics Report (8:00 PM)',
+      subtitle: ${uniqueVisitors} visitors entered &middot;  client responses,
+      time: timeFormatted,
+      timestamp: Date.now(),
+      read: false
+    };
+
+    state.notifications.unshift(notifItem);
+    if (state.notifications.length > 50) state.notifications.length = 50;
+    saveNotifications();
+    renderNotificationCenter();
+
+    // Play chime & toast
+    playExecutiveChime('report');
+    showToast('ðŸ“Š Daily 8:00 PM Executive Report Compiled!', 'info');
+
+    // Desktop/OS Notification
+    sendDesktopNotification('bitwise. â€” Daily 8:00 PM Executive Report', {
+      body: ${uniqueVisitors} genuine visitors entered today.  project inquiries received. Click to open report.,
+      tag: 'daily-report-' + today,
+      onClick: () => window.openDailyReportModal(reportId)
+    });
+
+    if (isManualPreview) {
+      window.openDailyReportModal(reportId);
+    }
   }
 
-  window.lockDashboard = function () {
-    sessionStorage.removeItem(STORAGE_KEY_SESSION);
+  function checkAndTriggerDailyReport() {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const hour = now.getHours();
 
-    const gate = document.getElementById('passkey-security-gate');
-    if (gate) {
-      gate.classList.remove('is-unlocked');
-      gate.style.display = 'flex';
+    // Exactly at or after 8:00 PM (20:00)
+    if (hour >= 20) {
+      const alreadyHasDaily = state.dailyReports.some(r => r.date === todayStr && !r.isManualPreview);
+      if (!alreadyHasDaily) {
+        generateDailyReport(todayStr, false);
+      }
     }
+  }
 
-    const topbarTag = document.getElementById('topbar-founder-tag');
-    if (topbarTag) topbarTag.style.display = 'none';
-
-    setScannerAnimationState('idle', 'Biometric Passkey Terminal', 'Select founder profile & scan passkey');
-    updateFounderCardsUI();
-    showToast('Executive Console has been locked.', 'info');
+  window.previewDailyReport = function () {
+    const todayStr = new Date().toISOString().split('T')[0];
+    generateDailyReport(todayStr, true);
   };
 
-  function checkExistingSessionOnLoad() {
-    // Sync remote passkeys
-    fetch('/api/auth/passkeys')
-      .then(r => r.json())
-      .then(remoteKeys => {
-        if (Array.isArray(remoteKeys) && remoteKeys.length > 0) {
-          const local = getStoredPasskeys();
-          remoteKeys.forEach(rk => {
-            if (!local.some(lk => lk.founderId === rk.founderId)) {
-              local.push(rk);
+  window.openDailyReportModal = function (reportId) {
+    const report = state.dailyReports.find(r => r.id === reportId) || state.dailyReports[0];
+    if (!report) {
+      window.previewDailyReport();
+      return;
+    }
+
+    const titleEl = document.getElementById('daily-report-modal-title');
+    const dateEl = document.getElementById('daily-report-modal-date');
+    const bodyEl = document.getElementById('daily-report-modal-body');
+
+    if (titleEl) {
+      titleEl.textContent = report.isManualPreview ? 'Daily Executive Analytics Report (Preview)' : 'Daily Executive Analytics Report Â· 8:00 PM';
+    }
+    if (dateEl) {
+      dateEl.textContent = Date:  Â· Dispatched at ;
+    }
+
+    if (!bodyEl) return;
+
+    // Format devices pills
+    const devPills = Object.keys(report.deviceCounts || {}).map(devName => {
+      const count = report.deviceCounts[devName] || 0;
+      let icon = 'ðŸ“±';
+      if (devName.includes('Windows')) icon = 'ðŸ’»';
+      else if (devName.includes('Android')) icon = 'ðŸ¤–';
+      else if (devName.includes('Mac')) icon = 'ðŸ';
+      return <div class="device-pill"><span></span> <span>:</span> <strong></strong></div>;
+    }).join('');
+
+    // Format top pages
+    const pagesRows = Object.keys(report.pagesMap || {}).slice(0, 5).map(pg => {
+      return <tr><td></td><td style="text-align:right; font-weight:700;"> views</td></tr>;
+    }).join('');
+
+    // Format inquiries table
+    let inquiriesHtml = '';
+    if (report.inquiriesToday && report.inquiriesToday.length > 0) {
+      const rows = report.inquiriesToday.map(inq => 
+        <tr>
+          <td><strong></strong><br><span style="color:var(--text-muted); font-size:11px;"></span></td>
+          <td><span style="color:#38BDF8;"></span></td>
+          <td>...</td>
+        </tr>
+      ).join('');
+      inquiriesHtml = 
+        <div class="daily-section-heading">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>Client Inquiries Received Today ()</span>
+        </div>
+        <table class="report-table">
+          <thead><tr><th>Client &amp; Contact</th><th>Creative Focus</th><th>Project Brief</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      ;
+    } else {
+      inquiriesHtml = 
+        <div class="daily-section-heading"><span>Client Inquiries Today</span></div>
+        <div style="font-size:12px; color:var(--text-muted); padding:10px 12px; background:rgba(255,255,255,0.02); border-radius:8px; margin-bottom:16px;">
+          No client inquiries were submitted today. Live incoming submissions will appear here instantly.
+        </div>
+      ;
+    }
+
+    const convRate = report.totalViews > 0 
+      ? (((report.inquiriesToday ? report.inquiriesToday.length : 0) / report.totalViews) * 100).toFixed(1) 
+      : '0.0';
+
+    bodyEl.innerHTML = 
+      <div class="daily-report-stats-grid">
+        <div class="daily-stat-box">
+          <span class="daily-stat-label">Total Visits</span>
+          <span class="daily-stat-value"></span>
+        </div>
+        <div class="daily-stat-box">
+          <span class="daily-stat-label">Who Entered (Unique)</span>
+          <span class="daily-stat-value" style="color:#38BDF8;"></span>
+        </div>
+        <div class="daily-stat-box">
+          <span class="daily-stat-label">Client Inquiries</span>
+          <span class="daily-stat-value" style="color:#10B981;"></span>
+        </div>
+        <div class="daily-stat-box">
+          <span class="daily-stat-label">Conversion Rate</span>
+          <span class="daily-stat-value">%</span>
+        </div>
+      </div>
+
+      <div class="daily-section-heading">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+        <span>Visitors By Device &amp; Platform (iPhone, Redmi, Windows)</span>
+      </div>
+      <div class="device-pills-wrap">
+        
+      </div>
+
+      
+
+      <div class="daily-section-heading">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        <span>Top Viewed Pages</span>
+      </div>
+      <table class="report-table">
+        <thead><tr><th>Page URL</th><th style="text-align:right;">Views</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    ;
+
+    const modal = document.getElementById('modal-daily-report');
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.testNotificationAlert = function () {
+    handleNewInquiry({
+      id: 'inq_sample_' + Date.now(),
+      name: 'Alex Morgan',
+      email: 'alex.morgan@studio-design.com',
+      service: 'Photography & Editorial',
+      timeline: 'Immediate (1-2 weeks)',
+      message: 'We are interested in booking bitwise for a 3-day brand shoot and film campaign.',
+      timestamp: new Date().toISOString(),
+      read: false
+    });
+  };
+
+  // 6. Background synchronization with studio server
+  function syncRemoteInquiries() {
+    fetch('/api/inquiries')
+      .then(res => {
+        if (!res.ok) return [];
+        return res.json();
+      })
+      .then(remoteList => {
+        if (Array.isArray(remoteList) && remoteList.length > 0) {
+          let hasNew = false;
+          remoteList.forEach(item => {
+            if (item && item.id && !state.inquiries.some(i => i.id === item.id)) {
+              handleNewInquiry(item);
+              hasNew = true;
             }
           });
-          localStorage.setItem(STORAGE_KEY_PASSKEYS, JSON.stringify(local));
-          updateFounderCardsUI();
+          if (hasNew) {
+            renderInquiries();
+            renderAnalytics();
+            updateNavBadges();
+          }
         }
       })
       .catch(() => {});
-
-    updateFounderCardsUI();
-
-    // 1. Check for incoming Magic Verification Link in URL (for Aaqib enrollment)
-        const initialFounder = FOUNDERS_REGISTRY[currentSelectedFounder] || { name: 'Ruhaim Riyaz', role: 'Lead Cinematographer' };
-    setScannerAnimationState('idle', 'Passkey Ready', 'Founder: ' + initialFounder.name + ' (' + initialFounder.role + ') \u00B7 Biometric Passkey active');
-
-    // 2. Check for active session in sessionStorage
-    try {
-      const raw = sessionStorage.getItem(STORAGE_KEY_SESSION);
-      if (raw) {
-        const session = JSON.parse(raw);
-        if (session && session.founderId && FOUNDERS_REGISTRY[session.founderId]) {
-          const gate = document.getElementById('passkey-security-gate');
-          if (gate) {
-            gate.classList.add('is-unlocked');
-            gate.style.display = 'none';
-          }
-
-          const topbarTag = document.getElementById('topbar-founder-tag');
-          const nameEl = document.getElementById('topbar-founder-name');
-          if (topbarTag) topbarTag.style.display = 'inline-flex';
-          if (nameEl) {
-            nameEl.textContent = `${session.founderName} (${session.role})`;
-          }
-          return;
-        }
-      }
-    } catch {}
-
-    // Lock screen by default
-    const gate = document.getElementById('passkey-security-gate');
-    if (gate) {
-      gate.classList.remove('is-unlocked');
-      gate.style.display = 'flex';
-    }
   }
-
-
     function init() {
-    checkExistingSessionOnLoad();
     loadAndCleanState();
     setupNavigation();
     setupRealtimeBridge();
     setup3DCardTilt();
-    initDesktopNotifications();
+    initNotificationSystem();
+    syncRemoteInquiries();
     syncRemoteAnalyticsEvents();
     setupInteractiveBackground();
     setupModals();
+
+    // Background scheduler & sync
+    setInterval(syncRemoteInquiries, 6000);
+    setInterval(syncRemoteAnalyticsEvents, 12000);
+    setInterval(checkAndTriggerDailyReport, 30000);
 
     // Render Views
     renderAnalytics();
@@ -862,20 +897,14 @@
 
       if (type === 'NEW_VISIT') {
         if (state.analyticsEvents.some(e => e.id === data.id)) return;
-        showToast('Real-Time Visitor on ' + (data.page || 'Home') + ' via ' + (data.device || 'Web'), 'info');
+        // Quietly record genuine visitor telemetry for analytics and 8:00 PM daily report (no toast spam)
         state.analyticsEvents.unshift(data);
         if (state.analyticsEvents.length > 500) state.analyticsEvents.length = 500;
         localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(state.analyticsEvents));
         renderAnalytics();
       } else if (type === 'NEW_INQUIRY') {
-        if (state.inquiries.some(i => i.id === data.id)) return;
-        playNotificationChime();
-        showInquiryToast(data);
-        state.inquiries.unshift(data);
-        localStorage.setItem(STORAGE_KEY_INQUIRIES, JSON.stringify(state.inquiries));
-        renderInquiries();
-        renderAnalytics();
-        updateNavBadges();
+        // Trigger instant inquiry notification workflow
+        handleNewInquiry(data);
       }
     }
 
@@ -2745,379 +2774,3 @@
     init();
   }
 })();
-
-
-  // ==========================================================================
-  // EXECUTIVE NOTIFICATIONS & DESKTOP ALERTS CONTROLLER
-  // ==========================================================================
-  function initDesktopNotifications() {
-    updateNotificationPermissionUI();
-
-    // Load persisted notifications
-    try {
-      const saved = localStorage.getItem('bitwise_dashboard_notifications');
-      if (saved) {
-        state.notifications = JSON.parse(saved) || [];
-      }
-    } catch (e) {
-      state.notifications = [];
-    }
-    renderNotificationCenter();
-
-    // Check if permission banner should be shown
-    const isDefault = (typeof Notification !== 'undefined') && Notification.permission === 'default';
-    const isDismissed = sessionStorage.getItem('bitwise_notif_banner_dismissed') === 'true';
-    const banner = document.getElementById('notification-permission-banner');
-    if (banner) {
-      banner.style.display = (isDefault && !isDismissed) ? 'flex' : 'none';
-    }
-
-    // Set sound checkbox state in settings
-    const soundCb = document.getElementById('setting-sound-chime');
-    if (soundCb) {
-      soundCb.checked = state.soundEnabled;
-    }
-
-    // Close dropdown on outside click
-    document.addEventListener('click', function (e) {
-      const wrapper = document.getElementById('notification-bell-wrapper');
-      const dropdown = document.getElementById('notification-dropdown');
-      if (wrapper && dropdown && dropdown.style.display !== 'none') {
-        if (!wrapper.contains(e.target)) {
-          dropdown.style.display = 'none';
-        }
-      }
-    });
-  }
-
-  function updateNotificationPermissionUI() {
-    const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
-    const dot = document.getElementById('notif-perm-dot');
-    const text = document.getElementById('notif-perm-text');
-    const btnEnable = document.getElementById('btn-perm-enable');
-    const settingsDesc = document.getElementById('settings-notif-desc');
-    const settingsBtn = document.getElementById('btn-settings-request-perm');
-
-    if (perm === 'granted') {
-      if (dot) { dot.className = 'notif-perm-dot granted'; }
-      if (text) { text.textContent = 'Desktop Alerts: Enabled'; }
-      if (btnEnable) { btnEnable.style.display = 'none'; }
-      if (settingsDesc) { settingsDesc.innerHTML = '<span style="color:#10B981; font-weight:600;">\u2713 Active</span> \u2014 Instant system alerts enabled'; }
-      if (settingsBtn) { settingsBtn.disabled = true; settingsBtn.textContent = 'Active'; settingsBtn.style.opacity = '0.6'; }
-    } else if (perm === 'denied') {
-      if (dot) { dot.className = 'notif-perm-dot denied'; }
-      if (text) { text.textContent = 'Desktop Alerts: Blocked'; }
-      if (btnEnable) { btnEnable.style.display = 'none'; }
-      if (settingsDesc) { settingsDesc.innerHTML = '<span style=\"color:#EF4444; font-weight:600;\">Blocked</span> in browser settings. Please allow notifications in site permissions.'; }
-      if (settingsBtn) { settingsBtn.disabled = true; settingsBtn.textContent = 'Blocked in Browser'; }
-    } else {
-      if (dot) { dot.className = 'notif-perm-dot'; }
-      if (text) { text.textContent = 'Desktop Alerts: Default'; }
-      if (btnEnable) { btnEnable.style.display = 'inline-block'; }
-      if (settingsDesc) { settingsDesc.textContent = 'Click Enable Alerts to grant browser notification permission.'; }
-      if (settingsBtn) { settingsBtn.disabled = false; settingsBtn.textContent = 'Enable Alerts'; }
-    }
-  }
-
-  window.requestNotificationPermission = async function () {
-    if (typeof Notification === 'undefined') {
-      showToast('Notifications are not supported in this browser.', 'error');
-      return;
-    }
-
-    try {
-      const result = await Notification.requestPermission();
-      updateNotificationPermissionUI();
-
-      const banner = document.getElementById('notification-permission-banner');
-      if (banner) banner.style.display = 'none';
-
-      if (result === 'granted') {
-        showToast('\u2713 Desktop Notifications Enabled! You will receive live alerts.', 'success');
-        sendDesktopNotification('bitwise. Official Dashboard', {
-          body: 'Desktop notifications are active. You will receive live visitor and inquiry alerts.',
-          tag: 'welcome-notif'
-        });
-      } else if (result === 'denied') {
-        showToast('Notifications blocked. You can re-enable them in browser site settings.', 'info');
-      }
-    } catch (err) {
-      console.warn('Notification permission error:', err);
-    }
-  };
-
-  window.dismissNotificationBanner = function () {
-    const banner = document.getElementById('notification-permission-banner');
-    if (banner) banner.style.display = 'none';
-    sessionStorage.setItem('bitwise_notif_banner_dismissed', 'true');
-  };
-
-  function sendDesktopNotification(title, options) {
-    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-
-    try {
-      const opts = {
-        body: options.body || '',
-        tag: options.tag || ('notif-' + Date.now()),
-        renotify: true,
-        silent: !state.soundEnabled
-      };
-      const notif = new Notification(title, opts);
-      notif.onclick = function () {
-        window.focus();
-        if (options.tab) switchTab(options.tab);
-        notif.close();
-      };
-    } catch (e) {
-      console.warn('Desktop notification dispatch warning:', e);
-    }
-  }
-
-  function playVisitorChime() {
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      if (ctx.state === 'suspended') ctx.resume();
-
-      const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1046.50, now); // C6
-      osc.frequency.exponentialRampToValueAtTime(1567.98, now + 0.12); // G6
-
-      gain.gain.setValueAtTime(0.09, now);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.55);
-    } catch (e) {}
-  }
-
-  function showVisitorToast(data) {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = 'toast toast-visitor';
-    toast.style.cursor = 'pointer';
-
-    const locationStr = data.location || 'Direct / Private';
-    const deviceStr = (data.device || 'Desktop') + ' \u2022 ' + (data.browser || 'Browser');
-    const pageStr = data.page || '/';
-
-    toast.innerHTML =
-      '<div class=\"toast-visitor-icon\">' +
-        '<span class=\"toast-beacon-core\"></span>' +
-        '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">' +
-          '<path d=\"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\"></path>' +
-          '<circle cx=\"9\" cy=\"7\" r=\"4\"></circle>' +
-          '<path d=\"M23 21v-2a4 4 0 0 0-3-3.87\"></path>' +
-          '<path d=\"M16 3.13a4 4 0 0 1 0 7.75\"></path>' +
-        '</svg>' +
-      '</div>' +
-      '<div style=\"display:flex; flex-direction:column; gap:3px; text-align:left; flex:1;\">' +
-        '<div style=\"display:flex; align-items:center; justify-content:space-between; gap:8px;\">' +
-          '<strong style=\"font-size:13px; font-weight:700; color:#FFFFFF;\">Live Visitor Arrival</strong>' +
-          '<span style=\"font-size:10.5px; padding:2px 6px; border-radius:4px; background:rgba(56,189,248,0.2); color:#38BDF8; font-weight:600;\">NEW</span>' +
-        '</div>' +
-        '<div style=\"font-size:12px; color:#E0E7FF; font-weight:500;\">' + escapeHtml(locationStr) + '</div>' +
-        '<div style=\"font-size:11px; color:#94A3B8;\">' + escapeHtml(deviceStr) + ' &bull; Page: ' + escapeHtml(pageStr) + '</div>' +
-        '<div style=\"margin-top:4px;\">' +
-          '<span style=\"font-size:10.5px; text-decoration:underline; font-weight:600; color:#38BDF8;\">View in Telemetry Stream &rarr;</span>' +
-        '</div>' +
-      '</div>';
-
-    toast.onclick = function () {
-      switchTab('analytics');
-      const table = document.getElementById('tab-analytics');
-      if (table) table.scrollIntoView({ behavior: 'smooth' });
-      toast.remove();
-    };
-
-    container.appendChild(toast);
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(50px)';
-      setTimeout(() => toast.remove(), 250);
-    }, 5500);
-  }
-
-  function addNotificationFeedItem(item) {
-    if (!item) return;
-    state.notifications.unshift(item);
-    if (state.notifications.length > 50) state.notifications.length = 50;
-
-    state.unreadNotificationsCount = (state.unreadNotificationsCount || 0) + 1;
-
-    try {
-      localStorage.setItem('bitwise_dashboard_notifications', JSON.stringify(state.notifications));
-    } catch (e) {}
-
-    renderNotificationCenter();
-  }
-
-  function renderNotificationCenter() {
-    const badge = document.getElementById('notification-badge');
-    const pill = document.getElementById('notif-count-pill');
-    const list = document.getElementById('notification-items-list');
-
-    const unread = state.unreadNotificationsCount || 0;
-    if (badge) {
-      if (unread > 0) {
-        badge.textContent = unread > 99 ? '99+' : unread;
-        badge.style.display = 'flex';
-      } else {
-        badge.style.display = 'none';
-      }
-    }
-
-    if (pill) {
-      pill.textContent = unread + ' new';
-    }
-
-    if (!list) return;
-
-    if (!state.notifications.length) {
-      list.innerHTML =
-        '<div class=\"notification-empty\" id=\"notification-empty\">' +
-          '<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9\"></path><path d=\"M13.73 21a2 2 0 0 1-3.46 0\"></path></svg>' +
-          '<span>No new notifications</span>' +
-          '<p>Live visitors and client inquiries will stream here in real time.</p>' +
-        '</div>';
-      return;
-    }
-
-    list.innerHTML = state.notifications.map(n => {
-      const isVisit = n.type === 'visit';
-      const icon = isVisit
-        ? '<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle></svg>'
-        : '<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z\"></path><polyline points=\"22,6 12,13 2,6\"></polyline></svg>';
-
-      const timeStr = n.timestamp ? new Date(n.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Just now';
-
-      return (
-        '<div class=\"notification-item\" onclick=\"window.handleNotificationItemClick(\'' + (n.id || '') + '\', \'' + (n.type || '') + '\')\">' +
-          '<div class=\"notif-item-icon ' + (isVisit ? 'visit' : 'inquiry') + '\">' + icon + '</div>' +
-          '<div class=\"notif-item-info\">' +
-            '<div class=\"notif-item-title\">' + escapeHtml(n.title || 'Event') + '</div>' +
-            '<div class=\"notif-item-sub\">' + escapeHtml(n.subtitle || '') + '</div>' +
-            '<div class=\"notif-item-time\">' + escapeHtml(timeStr) + '</div>' +
-          '</div>' +
-        '</div>'
-      );
-    }).join('');
-  }
-
-  window.handleNotificationItemClick = function (id, type) {
-    const dropdown = document.getElementById('notification-dropdown');
-    if (dropdown) dropdown.style.display = 'none';
-
-    if (type === 'visit') {
-      switchTab('analytics');
-    } else if (type === 'inquiry') {
-      switchTab('inquiries');
-      if (typeof window.viewInquiry === 'function') {
-        window.viewInquiry(id);
-      }
-    }
-  };
-
-  window.toggleNotificationCenter = function () {
-    const dropdown = document.getElementById('notification-dropdown');
-    if (!dropdown) return;
-
-    if (dropdown.style.display === 'none' || !dropdown.style.display) {
-      dropdown.style.display = 'flex';
-      // Mark notifications read
-      state.unreadNotificationsCount = 0;
-      const badge = document.getElementById('notification-badge');
-      if (badge) badge.style.display = 'none';
-      const pill = document.getElementById('notif-count-pill');
-      if (pill) pill.textContent = '0 new';
-    } else {
-      dropdown.style.display = 'none';
-    }
-  };
-
-  window.clearAllNotifications = function () {
-    state.notifications = [];
-    state.unreadNotificationsCount = 0;
-    try {
-      localStorage.removeItem('bitwise_dashboard_notifications');
-    } catch (e) {}
-    renderNotificationCenter();
-    showToast('All notifications cleared', 'info');
-  };
-
-  window.testNotificationAlert = function () {
-    const testData = {
-      id: 'test_' + Date.now(),
-      device: 'Desktop',
-      browser: 'Chrome',
-      page: '/portfolio',
-      location: 'New York, United States',
-      timestamp: new Date().toISOString()
-    };
-
-    if (state.soundEnabled) {
-      playVisitorChime();
-    }
-    showVisitorToast(testData);
-
-    sendDesktopNotification('bitwise. Official Dashboard', {
-      body: 'Live Test Alert: New visitor from New York, United States (Chrome on Desktop)',
-      tag: 'test-' + Date.now(),
-      tab: 'analytics'
-    });
-
-    addNotificationFeedItem({
-      id: testData.id,
-      type: 'visit',
-      title: 'Visitor from New York, United States',
-      subtitle: 'Desktop \u2022 Chrome \u2022 /portfolio',
-      timestamp: testData.timestamp,
-      data: testData
-    });
-  };
-
-  window.toggleSoundSetting = function (enabled) {
-    state.soundEnabled = !!enabled;
-    localStorage.setItem('bitwise_sound_enabled', state.soundEnabled ? 'true' : 'false');
-    if (state.soundEnabled) {
-      playVisitorChime();
-      showToast('Notification sound chimes enabled', 'success');
-    } else {
-      showToast('Notification sound chimes muted', 'info');
-    }
-  };
-
-  function syncRemoteAnalyticsEvents() {
-    try {
-      fetch('/api/analytics/events')
-        .then(function (r) { return r.json(); })
-        .then(function (remoteEvents) {
-          if (Array.isArray(remoteEvents) && remoteEvents.length > 0) {
-            let updated = false;
-            remoteEvents.forEach(function (rev) {
-              if (rev && rev.id && !state.analyticsEvents.some(function (ev) { return ev.id === rev.id; })) {
-                state.analyticsEvents.push(rev);
-                updated = true;
-              }
-            });
-            if (updated) {
-              state.analyticsEvents.sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
-              if (state.analyticsEvents.length > 500) state.analyticsEvents.length = 500;
-              localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(state.analyticsEvents));
-              renderAnalytics();
-            }
-          }
-        })
-        .catch(function () {});
-    } catch (e) {}
-  }
